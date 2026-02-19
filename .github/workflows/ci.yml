@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+    tags-ignore:
+      - "**"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test-and-publish:
+    runs-on: ubuntu-latest
+    env:
+      PORT: "5000"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: pip install -r app/requirements.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Run Cypress tests
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: app
+          install-command: npm ci
+          start: python app.py
+          wait-on: http://127.0.0.1:5000
+          wait-on-timeout: 120
+
+      - name: Detect semver tag on current commit
+        id: semver
+        run: |
+          SEMVER_TAG="$(git tag --points-at "$GITHUB_SHA" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
+          if [ -n "$SEMVER_TAG" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "raw_tag=$SEMVER_TAG" >> "$GITHUB_OUTPUT"
+            echo "version=${SEMVER_TAG#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute image name
+        if: steps.semver.outputs.found == 'true'
+        id: image
+        run: echo "name=ghcr.io/$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        if: steps.semver.outputs.found == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        if: steps.semver.outputs.found == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish image
+        if: steps.semver.outputs.found == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.image.outputs.name }}:${{ steps.semver.outputs.version }}
