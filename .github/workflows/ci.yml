@@ -38,11 +38,15 @@ jobs:
           cache: npm
           cache-dependency-path: app/package.json
 
+      - name: Install Node dependencies
+        working-directory: app
+        run: npm install
+
       - name: Run Cypress tests
         uses: cypress-io/github-action@v6
         with:
           working-directory: app
-          install-command: npm install
+          install: false
           start: python app.py
           wait-on: http://127.0.0.1:5000
           wait-on-timeout: 120
