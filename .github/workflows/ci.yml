@@ -31,6 +31,9 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r app/requirements.txt
 
+      - name: Prepare app config for CI
+        run: cp app/config.sample.yaml app/config.yaml
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
