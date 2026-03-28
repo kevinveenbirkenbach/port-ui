@@ -1,22 +1,9 @@
 {
-  // Project-level Claude Code permissions for portfolio.
-  // This file is committed to git and applies to all contributors.
-  // For personal overrides use .claude/settings.local.json (gitignored).
-  //
-  // Rule evaluation order: deny > ask > allow (first match wins).
-
   "permissions": {
-
     "allow": [
-
-      // ─── FILESYSTEM ──────────────────────────────────────────────────────
-
       "Read",
       "Edit",
       "Write",
-
-      // ─── GIT (local only) ────────────────────────────────────────────────
-
       "Bash(git status*)",
       "Bash(git log*)",
       "Bash(git diff*)",
@@ -27,27 +14,15 @@
       "Bash(git fetch*)",
       "Bash(git stash*)",
       "Bash(git -C:*)",
-
-      // ─── MAKE ────────────────────────────────────────────────────────────
-
       "Bash(make*)",
-
-      // ─── PYTHON ──────────────────────────────────────────────────────────
-
       "Bash(python3*)",
       "Bash(python*)",
       "Bash(pip show*)",
       "Bash(pip list*)",
       "Bash(pip install*)",
-
-      // ─── NODE / NPM ──────────────────────────────────────────────────────
-
       "Bash(npm install*)",
       "Bash(npm run*)",
       "Bash(npx*)",
-
-      // ─── DOCKER ──────────────────────────────────────────────────────────
-
       "Bash(docker pull*)",
       "Bash(docker build*)",
       "Bash(docker images*)",
@@ -62,9 +37,6 @@
       "Bash(docker compose*)",
       "Bash(docker-compose*)",
       "Bash(docker container prune*)",
-
-      // ─── STANDARD UNIX TOOLS ─────────────────────────────────────────────
-
       "Bash(grep*)",
       "Bash(find*)",
       "Bash(ls*)",
@@ -78,9 +50,6 @@
       "Bash(cp*)",
       "Bash(mv*)",
       "Bash(jq*)",
-
-      // ─── WEB FETCH ───────────────────────────────────────────────────────
-
       "WebSearch",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
@@ -89,43 +58,25 @@
       "WebFetch(domain:pypi.org)",
       "WebFetch(domain:docs.cypress.io)",
       "WebFetch(domain:flask.palletsprojects.com)"
-
     ],
-
-    // ─── ALWAYS ASK ───────────────────────────────────────────────────────────
-
-    // docker run: root-equivalent without rootless Docker — ask to prevent
-    //   unintended privileged containers. Note: "make exec" already allows
-    //   shell access inside running containers via the Makefile.
-    // curl: unrestricted network access, can exfiltrate data or pipe remote
-    //   scripts to shell — WebFetch domain whitelist does NOT apply here.
     "ask": [
       "Bash(git push*)",
       "Bash(docker run*)",
       "Bash(curl*)"
     ],
-
-    // ─── ALWAYS DENY ──────────────────────────────────────────────────────────
-
     "deny": [
       "Bash(git push --force*)",
       "Bash(git reset --hard*)",
       "Bash(rm -rf*)",
       "Bash(sudo*)"
     ]
-
   },
-
-  // ─── SANDBOX ────────────────────────────────────────────────────────────────
-
   "sandbox": {
     "filesystem": {
-      // Allow writes within the project and common runtime directories
       "allowWrite": [
         ".",
         "/tmp"
       ],
-      // Protect sensitive paths outside the project
       "denyRead": [
         "~/.ssh",
         "~/.gnupg",
@@ -135,5 +86,4 @@
       ]
     }
   }
-
 }
