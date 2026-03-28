@@ -11,7 +11,7 @@ FLASK_ENV = os.getenv("FLASK_ENV", "production")
 FLASK_PORT = int(os.getenv("PORT", 5000))
 print(f"🔧 Starting app on port {FLASK_PORT}, FLASK_ENV={FLASK_ENV}")
 
-from flask import Flask, render_template, current_app
+from flask import current_app
 from markupsafe import Markup
 
 # Initialize the CacheManager

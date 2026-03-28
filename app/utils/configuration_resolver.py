@@ -1,4 +1,3 @@
-from pprint import pprint
 class ConfigurationResolver:
     """
     A class to resolve `link` entries in a nested configuration structure.

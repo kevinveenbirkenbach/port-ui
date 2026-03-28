@@ -6,7 +6,6 @@ Automatically generates CLI commands based on the Makefile definitions.
 import argparse
 import subprocess
 import sys
-import os
 import re
 from pathlib import Path
 
