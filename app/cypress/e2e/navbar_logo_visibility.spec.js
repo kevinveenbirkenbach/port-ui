@@ -15,7 +15,7 @@ describe('Navbar Logo Visibility', () => {
 
   it('should become visible (opacity 1) after entering fullscreen', () => {
     cy.window().then(win => {
-      win.fullscreen();
+      win.enterFullscreen();
     });
     cy.get('#navbar_logo', { timeout: 4000 })
       .should('have.css', 'opacity', '1');
@@ -23,7 +23,7 @@ describe('Navbar Logo Visibility', () => {
 
   it('should become invisible again (opacity 0) after exiting fullscreen', () => {
     cy.window().then(win => {
-      win.fullscreen();
+      win.enterFullscreen();
       win.exitFullscreen();
     });
     cy.get('#navbar_logo', { timeout: 4000 })

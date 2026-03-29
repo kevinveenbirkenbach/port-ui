@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  pull_request:
   push:
     branches:
       - "**"
@@ -9,59 +10,48 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
-  test-and-publish:
+  security:
+    name: Run security workflow
+    uses: ./.github/workflows/security.yml
+
+  tests:
+    name: Run test workflow
+    uses: ./.github/workflows/tests.yml
+
+  lint:
+    name: Run lint workflow
+    uses: ./.github/workflows/lint.yml
+
+  publish:
+    name: Publish image
     runs-on: ubuntu-latest
-    env:
-      PORT: "5000"
+    needs:
+      - security
+      - tests
+      - lint
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install Python dependencies
-        run: pip install -r app/requirements.txt
-
-      - name: Prepare app config for CI
-        run: cp app/config.sample.yaml app/config.yaml
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: app/package.json
-
-      - name: Install Node dependencies
-        working-directory: app
-        run: npm install
-
-      - name: Run Cypress tests
-        uses: cypress-io/github-action@v6
-        with:
-          working-directory: app
-          install: false
-          start: python app.py
-          wait-on: http://127.0.0.1:5000
-          wait-on-timeout: 120
 
       - name: Detect semver tag on current commit
         id: semver
         run: |
           SEMVER_TAG="$(git tag --points-at "$GITHUB_SHA" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
           if [ -n "$SEMVER_TAG" ]; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-            echo "raw_tag=$SEMVER_TAG" >> "$GITHUB_OUTPUT"
-            echo "version=${SEMVER_TAG#v}" >> "$GITHUB_OUTPUT"
+            {
+              echo "found=true"
+              echo "raw_tag=$SEMVER_TAG"
+              echo "version=${SEMVER_TAG#v}"
+            } >> "$GITHUB_OUTPUT"
           else
             echo "found=false" >> "$GITHUB_OUTPUT"
           fi

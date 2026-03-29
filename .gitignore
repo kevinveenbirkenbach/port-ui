@@ -3,3 +3,9 @@ app/config.yaml
 app/static/cache/*
 .env
 app/cypress/screenshots/*
+.ruff_cache/
+app/node_modules/
+hadolint-results.sarif
+build/
+*.egg-info/
+app/core.*

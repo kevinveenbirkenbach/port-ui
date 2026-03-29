@@ -32,7 +32,7 @@ def compute_card_classes(cards):
                     lg_classes.append("col-lg-6")
                 else:
                     lg_classes.append("col-lg-4")
-    # md classes: If the number of cards is even or if not the last card, otherwise "col-md-12"
+    # Use a full-width last card on medium screens only when the total count is odd.
     md_classes = []
     for i in range(num_cards):
         if num_cards % 2 == 0 or i < num_cards - 1:

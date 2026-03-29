@@ -1,14 +1,16 @@
-# Base image for Python
-FROM python:slim
+FROM python:3.12-slim
 
-# Set the working directory
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    FLASK_HOST=0.0.0.0
+
+WORKDIR /tmp/build
+
+COPY pyproject.toml README.md main.py ./
+COPY app ./app
+RUN python -m pip install --no-cache-dir .
+
 WORKDIR /app
-
-# Copy and install dependencies
-COPY app/requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
 COPY app/ .
 
 CMD ["python", "app.py"]

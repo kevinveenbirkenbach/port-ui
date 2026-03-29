@@ -3,10 +3,11 @@
 main.py - Proxy to Makefile targets for managing the Portfolio CMS Docker application.
 Automatically generates CLI commands based on the Makefile definitions.
 """
+
 import argparse
+import re
 import subprocess
 import sys
-import re
 from pathlib import Path
 
 MAKEFILE_PATH = Path(__file__).resolve().parent / "Makefile"
@@ -20,16 +21,17 @@ def load_targets(makefile_path):
     """
     targets = []
     pattern = re.compile(r"^([A-Za-z0-9_\-]+):")
-    with open(makefile_path, 'r') as f:
-        lines = f.readlines()
+    with open(makefile_path, "r", encoding="utf-8") as handle:
+        lines = handle.readlines()
     for idx, line in enumerate(lines):
         m = pattern.match(line)
         if m:
             name = m.group(1)
-            help_text = ''
-            # look for next non-empty line
-            if idx + 1 < len(lines) and lines[idx+1].lstrip().startswith('#'):
-                help_text = lines[idx+1].lstrip('# ').strip()
+            help_text = ""
+            if idx + 1 < len(lines):
+                next_line = lines[idx + 1].lstrip()
+                if next_line.startswith("#"):
+                    help_text = next_line.lstrip("# ").strip()
             targets.append((name, help_text))
     return targets
 
@@ -54,13 +56,13 @@ def main():
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Print the generated Make command without executing it."
+        help="Print the generated Make command without executing it.",
     )
 
     subparsers = parser.add_subparsers(
         title="Available commands",
         dest="command",
-        required=True
+        required=True,
     )
 
     targets = load_targets(MAKEFILE_PATH)
@@ -69,15 +71,9 @@ def main():
         sp.set_defaults(target=name)
 
     args = parser.parse_args()
-
-    if not args.command:
-        parser.print_help()
-        sys.exit(1)
-
     cmd = ["make", args.target]
     run_command(cmd, dry_run=args.dry_run)
 
 
 if __name__ == "__main__":
-    from pathlib import Path
     main()
