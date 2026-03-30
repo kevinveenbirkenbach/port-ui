@@ -15,6 +15,10 @@ jobs:
   security:
     name: Run security workflow
     uses: ./.github/workflows/security.yml
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
 
   tests:
     name: Run test workflow
