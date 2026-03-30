@@ -145,7 +145,7 @@ security: install-dev test-security
 	$(PYTHON) -m pip_audit -r /tmp/portfolio-runtime-requirements.txt
 
 .PHONY: test-e2e
-test-e2e:
+test-e2e: npm-install
 	# Run Cypress end-to-end tests via act (stop portfolio container to free port first).
 	-docker stop portfolio 2>/dev/null || true
 	$(ACT) workflow_dispatch -W .github/workflows/tests.yml -j e2e
