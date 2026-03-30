@@ -5,6 +5,7 @@ app/static/cache/*
 app/cypress/screenshots/*
 .ruff_cache/
 app/node_modules/
+app/static/vendor/
 hadolint-results.sarif
 build/
 *.egg-info/
