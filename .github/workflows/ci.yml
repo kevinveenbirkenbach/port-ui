@@ -27,6 +27,9 @@ jobs:
   lint:
     name: Run lint workflow
     uses: ./.github/workflows/lint.yml
+    permissions:
+      contents: read
+      security-events: write
 
   publish:
     name: Publish image
