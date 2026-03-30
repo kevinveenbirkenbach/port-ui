@@ -111,6 +111,19 @@ div#navbarNavfooter li.nav-item {
   margin-right: 6px;
 }
 
+/* Prevent nav items from wrapping to a second line */
+div#navbarNavheader .navbar-nav,
+div#navbarNavfooter .navbar-nav {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+}
+
+div#navbarNavheader .navbar-nav::-webkit-scrollbar,
+div#navbarNavfooter .navbar-nav::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
 main, footer, header, nav {
   position: relative;
   box-shadow: 
@@ -168,13 +181,16 @@ iframe{
 }
 
 #navbar_logo {
-  /* start invisible but in the layout (d-none will actually hide it) */
   opacity: 0;
-  transition: opacity var(--anim-duration) ease-in-out;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity var(--anim-duration) ease-in-out,
+              max-width var(--anim-duration) ease-in-out;
 }
 
 #navbar_logo.visible {
   opacity: 1 !important;
+  max-width: 300px;
 }
 
 
