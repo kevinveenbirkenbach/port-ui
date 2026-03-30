@@ -1,2 +1,4 @@
-https://pypi.org/project/portfolio-ui/
 git@github.com:kevinveenbirkenbach/port-ui.git
+ssh://git@code.infinito.nexus:2201/kevinveenbirkenbach/port-ui.git
+ssh://git@git.veen.world:2201/kevinveenbirkenbach/port-ui.git
+
