@@ -22,7 +22,7 @@ build-no-cache:
 	docker build --no-cache -t application-portfolio .
 
 .PHONY: up
-up:
+up: npm-install
 	# Start the application using docker-compose with build.
 	docker-compose up -d --build --force-recreate
 
@@ -58,12 +58,12 @@ logs:
 	docker logs -f portfolio
 
 .PHONY: dev
-dev:
+dev: npm-install
 	# Start the application in development mode using docker-compose.
 	FLASK_ENV=development docker-compose up -d
 
 .PHONY: prod
-prod:
+prod: npm-install
 	# Start the application in production mode using docker-compose (with build).
 	docker-compose up -d --build
 
