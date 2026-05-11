@@ -22,7 +22,7 @@ build-no-cache:
 	docker build --no-cache -t application-portfolio .
 
 .PHONY: up
-up: npm-install
+up:
 	# Start the application using docker-compose with build.
 	docker-compose up -d --build --force-recreate
 
@@ -58,12 +58,12 @@ logs:
 	docker logs -f portfolio
 
 .PHONY: dev
-dev: npm-install
+dev:
 	# Start the application in development mode using docker-compose.
 	FLASK_ENV=development docker-compose up -d
 
 .PHONY: prod
-prod: npm-install
+prod:
 	# Start the application in production mode using docker-compose (with build).
 	docker-compose up -d --build
 
@@ -91,11 +91,6 @@ install:
 install-dev:
 	# Install runtime and developer dependencies from pyproject.toml.
 	$(PYTHON) -m pip install -e ".[dev]"
-
-.PHONY: npm-install
-npm-install:
-	# Install Node.js dependencies for browser tests.
-	cd app && npm install
 
 .PHONY: lint-actions
 lint-actions:
@@ -145,7 +140,7 @@ security: install-dev test-security
 	$(PYTHON) -m pip_audit -r /tmp/portfolio-runtime-requirements.txt
 
 .PHONY: test-e2e
-test-e2e: npm-install
+test-e2e:
 	# Run Cypress end-to-end tests via act (stop portfolio container to free port first).
 	-docker stop portfolio 2>/dev/null || true
 	$(ACT) workflow_dispatch -W .github/workflows/tests.yml -j e2e
