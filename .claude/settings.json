@@ -57,18 +57,27 @@
       "WebFetch(domain:docs.docker.com)",
       "WebFetch(domain:pypi.org)",
       "WebFetch(domain:docs.cypress.io)",
-      "WebFetch(domain:flask.palletsprojects.com)"
-    ],
-    "ask": [
-      "Bash(git push*)",
-      "Bash(docker run*)",
-      "Bash(curl*)"
+      "WebFetch(domain:flask.palletsprojects.com)",
+      "Bash(netstat -lnt)",
+      "Bash(make test-e2e *)",
+      "Bash(echo \"EXIT=$?\")",
+      "Read(//tmp/**)",
+      "Bash(docker exec *)",
+      "Bash(docker restart *)"
     ],
     "deny": [
       "Bash(git push --force*)",
       "Bash(git reset --hard*)",
       "Bash(rm -rf*)",
       "Bash(sudo*)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(docker run*)",
+      "Bash(curl*)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
     ]
   },
   "sandbox": {
