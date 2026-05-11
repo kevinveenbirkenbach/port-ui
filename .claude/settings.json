@@ -63,7 +63,8 @@
       "Bash(echo \"EXIT=$?\")",
       "Read(//tmp/**)",
       "Bash(docker exec *)",
-      "Bash(docker restart *)"
+      "Bash(docker restart *)",
+      "Bash(jobs)"
     ],
     "deny": [
       "Bash(git push --force*)",
