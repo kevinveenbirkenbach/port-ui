@@ -1,6 +1,58 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const menuItems = document.querySelectorAll('.nav-item.dropdown');
-  const subMenuItems = document.querySelectorAll('.dropdown-submenu');
+  function getDirectChildByClass(item, className) {
+    return Array.from(item.children).find(child => child.classList?.contains(className));
+  }
+
+  function getMenu(item) {
+    return getDirectChildByClass(item, 'dropdown-menu');
+  }
+
+  function getToggle(item) {
+    return getDirectChildByClass(item, 'dropdown-toggle');
+  }
+
+  function isTopLevelDropdown(item) {
+    return (
+      item.classList.contains('nav-item') &&
+      (item.classList.contains('dropdown') || item.classList.contains('dropup'))
+    );
+  }
+
+  function chooseDirection(item) {
+    const rect = item.getBoundingClientRect();
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceAbove > spaceBelow) {
+      item.classList.add('dropup');
+      item.classList.remove('dropdown');
+    } else {
+      item.classList.add('dropdown');
+      item.classList.remove('dropup');
+    }
+  }
+
+  function ensureDropdownInstances(root = document) {
+    const scope = root && root.querySelectorAll ? root : document;
+    scope
+      .querySelectorAll('.nav-item.dropdown > .dropdown-toggle, .nav-item.dropup > .dropdown-toggle')
+      .forEach(toggle => {
+        toggle.setAttribute('data-bs-toggle', 'dropdown');
+        if (!toggle.hasAttribute('aria-expanded')) {
+          toggle.setAttribute('aria-expanded', 'false');
+        }
+        if (window.bootstrap?.Dropdown) {
+          // Use Popper strategy: 'fixed' so the menu is positioned relative
+          // to the viewport and escapes ancestors with overflow:hidden
+          // (e.g. <header> which clips for the fullscreen-collapse animation).
+          window.bootstrap.Dropdown.getInstance(toggle)?.dispose();
+          new window.bootstrap.Dropdown(toggle, {
+            popperConfig(defaultBsPopperConfig) {
+              return { ...defaultBsPopperConfig, strategy: 'fixed' };
+            },
+          });
+        }
+      });
+  }
 
   function addMenuEventListeners(items, isTopLevel) {
     items.forEach(item => {
@@ -8,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       function onMouseEnter() {
         clearTimeout(timeout);
-        openMenu(item, isTopLevel);
+        openMenu(item, isTopLevel, 'hover');
       }
 
       function onMouseLeave() {
@@ -25,7 +77,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Open and adjust position on click
       item.addEventListener('click', (e) => {
+        const toggle = getToggle(item);
+        const clickedToggle = toggle && (e.target === toggle || toggle.contains(e.target));
+
+        if (isTopLevel && !clickedToggle) {
+          e.stopPropagation();
+          return;
+        }
+
         e.stopPropagation(); // Prevents menus from closing when clicking inside
+        if (isTopLevel) {
+          e.preventDefault();
+          if (window.bootstrap?.Dropdown) {
+            if (item.dataset.openedBy === 'click') {
+              closeMenu(item);
+            } else if (getMenu(item)) {
+              item.dataset.openedBy = 'click';
+              item.classList.add('open');
+              chooseDirection(item);
+              window.bootstrap.Dropdown.getOrCreateInstance(toggle).show();
+            }
+            return;
+          }
+        }
         if (item.classList.contains('open')) {
           closeMenu(item);
         } else {
@@ -35,39 +109,59 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const TOP_LEVEL_SELECTOR = '.nav-item.dropdown, .nav-item.dropup';
+
   function addAllMenuEventListeners() {
-    const updatedMenuItems = document.querySelectorAll('.nav-item.dropdown');
+    const updatedMenuItems = document.querySelectorAll(TOP_LEVEL_SELECTOR);
     const updatedSubMenuItems = document.querySelectorAll('.dropdown-submenu');
     addMenuEventListeners(updatedMenuItems, true);
     addMenuEventListeners(updatedSubMenuItems, false);
   }
 
+  ensureDropdownInstances();
   addAllMenuEventListeners();
 
   // Global click listener to close menus when clicking outside
   document.addEventListener('click', () => {
+    const menuItems = document.querySelectorAll(TOP_LEVEL_SELECTOR);
+    const subMenuItems = document.querySelectorAll('.dropdown-submenu');
     [...menuItems, ...subMenuItems].forEach(item => closeMenu(item));
   });
 
-  function openMenu(item, isTopLevel) {
+  function openMenu(item, isTopLevel, openedBy = 'script') {
     item.classList.add('open');
-    const submenu = item.querySelector('.dropdown-menu');
-    if (submenu) {
-      submenu.style.display = 'block';
-      submenu.style.opacity = '1';
-      submenu.style.visibility = 'visible';
-      adjustMenuPosition(submenu, item, isTopLevel);
+    const submenu = getMenu(item);
+    if (!submenu) return;
+    if (isTopLevel) {
+      item.dataset.openedBy = openedBy;
+      const toggle = getToggle(item);
+      if (toggle && window.bootstrap?.Dropdown) {
+        chooseDirection(item);
+        window.bootstrap.Dropdown.getOrCreateInstance(toggle).show();
+        return;
+      }
     }
+    submenu.style.display = 'block';
+    submenu.style.opacity = '1';
+    submenu.style.visibility = 'visible';
+    adjustMenuPosition(submenu, item, isTopLevel);
   }
 
   function closeMenu(item) {
     item.classList.remove('open');
-    const submenu = item.querySelector('.dropdown-menu');
-    if (submenu) {
-      submenu.style.display = 'none';
-      submenu.style.opacity = '0';
-      submenu.style.visibility = 'hidden';
+    delete item.dataset.openedBy;
+    const submenu = getMenu(item);
+    if (!submenu) return;
+    if (isTopLevelDropdown(item)) {
+      const toggle = getToggle(item);
+      if (toggle && window.bootstrap?.Dropdown) {
+        window.bootstrap.Dropdown.getOrCreateInstance(toggle).hide();
+        return;
+      }
     }
+    submenu.style.display = 'none';
+    submenu.style.opacity = '0';
+    submenu.style.visibility = 'hidden';
   }
 
   function isSmallScreen() {

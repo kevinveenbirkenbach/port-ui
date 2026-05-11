@@ -1,9 +1,19 @@
-/* Top-level dropdown menu */
-.nav-item .dropdown-menu {
-    position: absolute; /* Important for positioning */
-    top: 100%; /* Default opening direction: downwards */
+/* Top-level dropdown menu — direction toggled by JS via .dropdown / .dropup */
+.nav-item.dropdown > .dropdown-menu,
+.nav-item.dropup > .dropdown-menu {
+    position: absolute;
     left: 0;
-    z-index: 1050; /* Ensures the menu appears above other elements */
+    z-index: 1050;
+}
+
+.nav-item.dropdown > .dropdown-menu {
+    top: 100%;
+    bottom: auto;
+}
+
+.nav-item.dropup > .dropdown-menu {
+    top: auto;
+    bottom: 100%;
 }
 
 /* Submenu position */

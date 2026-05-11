@@ -111,17 +111,13 @@ div#navbarNavfooter li.nav-item {
   margin-right: 6px;
 }
 
-/* Prevent nav items from wrapping to a second line */
+/* Prevent nav items from wrapping to a second line.
+   overflow is intentionally NOT set here — overflow-x:auto would
+   implicitly clip overflow-y too and hide dropdown menus that open
+   below the navbar. */
 div#navbarNavheader .navbar-nav,
 div#navbarNavfooter .navbar-nav {
   flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none; /* Firefox */
-}
-
-div#navbarNavheader .navbar-nav::-webkit-scrollbar,
-div#navbarNavfooter .navbar-nav::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
 }
 
 main, footer, header, nav {
@@ -197,7 +193,6 @@ iframe{
 /* 1. Make sure headers and footers can collapse */
 header,
 footer {
-  overflow: hidden;
   /* choose a max-height that’s >= your tallest header/footer */
   max-height: 200px;
   padding: 1rem;
@@ -206,9 +201,11 @@ footer {
     padding var(--anim-duration) ease-in-out;
 }
 
-/* 2. In fullscreen mode, collapse them */
+/* 2. In fullscreen mode, collapse them. overflow: hidden is scoped here
+   so dropdown menus can escape the header in normal mode. */
 body.fullscreen header,
 body.fullscreen footer {
+  overflow: hidden;
   max-height: 0;
   padding-top: 0;
   padding-bottom: 0;

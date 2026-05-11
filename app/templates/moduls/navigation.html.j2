@@ -85,7 +85,7 @@
                 {% else %}        
                 <!-- Dropdown Menu -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle btn btn-light" id="navbarDropdown{{ loop.index }}" role="button" data-bs-display="dynamic" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle btn btn-light" id="navbarDropdown{{ loop.index }}" role="button" data-bs-toggle="dropdown" data-bs-display="dynamic" aria-expanded="false">
                             {% if item.icon is defined and item.icon.class is defined %}
                                 {{ render_icon_and_name(item) }}
                             {% else %}

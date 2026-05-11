@@ -1,4 +1,69 @@
-// cypress/e2e/dynamic_popup.spec.js
+// cypress/e2e/menu.spec.js
+
+describe('Navigation dropdowns', () => {
+  beforeEach(() => {
+    cy.viewport(1280, 720);
+    cy.visit('/');
+  });
+
+  it('opens top-level dropdowns with explicit Bootstrap instances', () => {
+    cy.get('#navbarNavheader .nav-item.dropdown > .nav-link.dropdown-toggle')
+      .first()
+      .as('toggle')
+      .should('have.attr', 'data-bs-toggle', 'dropdown')
+      .and('have.attr', 'aria-expanded', 'false');
+
+    cy.get('@toggle').then($toggle => {
+      cy.window().then(win => {
+        expect(win.bootstrap.Dropdown.getInstance($toggle[0])).to.exist;
+      });
+    });
+
+    cy.get('@toggle')
+      .parent('.nav-item')
+      .find('> .dropdown-menu')
+      .as('menu')
+      .should('not.have.class', 'show')
+      .should('not.be.visible');
+
+    cy.get('@toggle').click();
+    cy.get('@toggle').should('have.attr', 'aria-expanded', 'true');
+    cy.get('@toggle').parent('.nav-item').should('have.class', 'dropdown');
+    cy.get('@menu')
+      .should('have.class', 'show')
+      .and('be.visible');
+  });
+
+  it('flips footer dropdowns upward where there is more space above', () => {
+    cy.get('#navbarNavfooter .nav-item .nav-link.dropdown-toggle')
+      .first()
+      .as('toggle');
+
+    cy.get('@toggle')
+      .parent('.nav-item')
+      .as('item')
+      .find('> .dropdown-menu')
+      .as('menu')
+      .should('not.have.class', 'show');
+
+    // Scroll the page so the footer sits at the bottom of the viewport,
+    // then click without Cypress re-scrolling — otherwise the toggle could
+    // land near the top of the viewport and chooseDirection would keep
+    // .dropdown (more space below than above).
+    cy.scrollTo('bottom');
+    cy.get('@toggle').then($toggle => {
+      const rect = $toggle[0].getBoundingClientRect();
+      expect(rect.top, 'toggle is in the lower half of the viewport')
+        .to.be.greaterThan(Cypress.config('viewportHeight') / 2);
+    });
+    cy.get('@toggle').click({ scrollBehavior: false });
+    cy.get('@item').should('have.class', 'dropup');
+    cy.get('@item').should('not.have.class', 'dropdown');
+    cy.get('@menu')
+      .should('have.class', 'show')
+      .and('be.visible');
+  });
+});
 
 describe('Dynamic Popup', () => {
   const base = {
