@@ -46,11 +46,12 @@ describe('Navigation dropdowns', () => {
       .as('menu')
       .should('not.have.class', 'show');
 
-    // Scroll the page so the footer sits at the bottom of the viewport,
-    // then click without Cypress re-scrolling — otherwise the toggle could
-    // land near the top of the viewport and chooseDirection would keep
-    // .dropdown (more space below than above).
-    cy.scrollTo('bottom');
+    // Make sure the footer sits at the bottom of the viewport before clicking
+    // — otherwise the toggle could land near the top and chooseDirection would
+    // keep .dropdown (more space below than above).
+    // ensureScrollable:false because on short pages the body isn't scrollable
+    // and the footer is already in view (which is fine for this test).
+    cy.scrollTo('bottom', { ensureScrollable: false });
     cy.get('@toggle').then($toggle => {
       const rect = $toggle[0].getBoundingClientRect();
       expect(rect.top, 'toggle is in the lower half of the viewport')
