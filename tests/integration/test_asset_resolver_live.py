@@ -21,7 +21,6 @@ when GET works), which would make this guard test non-deterministic.
 from __future__ import annotations
 
 import os
-import sys
 import unittest
 from tempfile import TemporaryDirectory
 from urllib.parse import urlparse
