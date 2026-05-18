@@ -3,14 +3,16 @@ import os
 
 import requests
 import yaml
-from flask import Flask, current_app, render_template
+from flask import Flask, current_app, render_template, url_for
 from markupsafe import Markup
 
 try:
+    from app.utils.asset_resolver import asset_src, resolve_asset_cache
     from app.utils.cache_manager import CacheManager
     from app.utils.compute_card_classes import compute_card_classes
     from app.utils.configuration_resolver import ConfigurationResolver
 except ImportError:  # pragma: no cover - supports running from the app/ directory.
+    from utils.asset_resolver import asset_src, resolve_asset_cache
     from utils.cache_manager import CacheManager
     from utils.compute_card_classes import compute_card_classes
     from utils.configuration_resolver import ConfigurationResolver
@@ -43,24 +45,16 @@ def load_config(app):
 
 
 def cache_icons_and_logos(app):
-    """Cache all icons and logos to local files, with a source fallback."""
+    """Resolve every icon/logo/favicon to either a local cache path or
+    an external URL (see ``resolve_asset_cache``)."""
     for card in app.config["cards"]:
-        icon = card.get("icon", {})
-        if icon.get("source"):
-            cached = cache_manager.cache_file(icon["source"])
-            icon["cache"] = cached or icon["source"]
+        icon = card.get("icon")
+        if icon:
+            resolve_asset_cache(icon, cache_manager)
 
-    company_logo = app.config["company"]["logo"]
-    cached = cache_manager.cache_file(company_logo["source"])
-    company_logo["cache"] = cached or company_logo["source"]
-
-    favicon = app.config["platform"]["favicon"]
-    cached = cache_manager.cache_file(favicon["source"])
-    favicon["cache"] = cached or favicon["source"]
-
-    platform_logo = app.config["platform"]["logo"]
-    cached = cache_manager.cache_file(platform_logo["source"])
-    platform_logo["cache"] = cached or platform_logo["source"]
+    resolve_asset_cache(app.config["company"]["logo"], cache_manager)
+    resolve_asset_cache(app.config["platform"]["favicon"], cache_manager)
+    resolve_asset_cache(app.config["platform"]["logo"], cache_manager)
 
 
 # Initialize Flask app
@@ -83,7 +77,10 @@ def utility_processor():
         except OSError:
             return ""
 
-    return dict(include_svg=include_svg)
+    def template_asset_src(asset):
+        return asset_src(asset, lambda filename: url_for("static", filename=filename))
+
+    return dict(include_svg=include_svg, asset_src=template_asset_src)
 
 
 @app.before_request

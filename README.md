@@ -4,6 +4,8 @@
 
 A lightweight, Docker-powered portfolio/landing-page generator—fully customizable via YAML! Showcase your projects, skills, and online presence in minutes.  
 
+![PortUI screenshot](assets/img/screenshot.png)
+
 > 🚀 You can also pair PortUI with JavaScript for sleek, web-based desktop-style interfaces.  
 > 💻 Example in action: [CyMaIS.Cloud](https://cymais.cloud/) (demo)  
 > 🌐 Another live example: [veen.world](https://www.veen.world/) (Kevin’s personal site)

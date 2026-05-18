@@ -1,13 +1,15 @@
-version: '3.8'
-
 services:
   portfolio:
+    # SPOT: IMAGE_NAME comes from .env (see env.example). No default —
+    # an empty tag would have compose fall back to `portfolio-portfolio`
+    # silently, which `make run-dev` would then fail to find.
+    image: ${IMAGE_NAME:?IMAGE_NAME must be set in .env (see env.example)}
     build:
       context: .
       dockerfile: Dockerfile
     container_name: portfolio
     ports:
-      - "${PORT:-5000}:${PORT:-5000}"
+      - "${PORT:?PORT must be set in .env (see env.example)}:${PORT:?PORT must be set in .env (see env.example)}"
     env_file:
       - .env
     volumes:

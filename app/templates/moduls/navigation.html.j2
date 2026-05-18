@@ -55,9 +55,9 @@
     <div class="collapse navbar-collapse" id="navbarNav{{menu_type}}">
         {% if menu_type == "header" %}
         <a class="navbar-brand align-items-center d-flex js-restore" id="navbar_logo" href="#">
-            <img 
-                src="{{ url_for('static', filename=platform.logo.cache) }}" 
-                alt="{{ platform.titel }}" 
+            <img
+                src="{{ asset_src(platform.logo) }}"
+                alt="{{ platform.titel }}"
                 class="d-inline-block align-text-top"
                 style="height:2rem">
             <div class="ms-2 d-flex flex-column">

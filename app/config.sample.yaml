@@ -198,7 +198,16 @@ accounts:
     url: https://s.veen.world/cloud
 
 cards:
-- icon: 
+- icon:
+    source: https://file.infinito.nexus/assets/img/logo.png
+  title: Infinito.Nexus
+  text: Open-source self-hosting stack — one-click deployable FOSS web apps with
+    shared identity, asset, and observability services. The platform that hosts
+    this site, including the dashboard you are looking at.
+  url: https://infinito.nexus
+  link_text: infinito.nexus
+  iframe: true
+- icon:
     source: https://cloud.veen.world/s/logo_agile_coach_512x512/download
   title: Agile Coach
   text: I lead agile transformations and improve team dynamics through Scrum, DevOps,

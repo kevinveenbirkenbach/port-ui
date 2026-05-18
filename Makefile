@@ -5,24 +5,61 @@ ifneq (,$(wildcard .env))
     export $(shell sed 's/=.*//' .env)
 endif
 
-# Default port (can be overridden with PORT env var)
-PORT ?= 5000
 PYTHON ?= python3
 ACT ?= act
 
-# Default port (can be overridden with PORT env var)
+# Bootstrap the local .env from the checked-in env.example template.
+# Idempotent: leaves an existing .env untouched.
+.PHONY: env
+env:
+	@if [ -f .env ]; then \
+		echo ".env already exists — leaving it alone."; \
+	else \
+		cp env.example .env; \
+		echo "Created .env from env.example — review and adjust."; \
+	fi
+
+# Bootstrap app/config.yaml from the checked-in app/config.sample.yaml
+# template. Idempotent: leaves an existing config.yaml untouched. The
+# Dockerfile COPYs the whole app/ directory at build time, so this file
+# must exist before `make build` / `make up`.
+.PHONY: config
+config:
+	@if [ -f app/config.yaml ]; then \
+		echo "app/config.yaml already exists — leaving it alone."; \
+	else \
+		cp app/config.sample.yaml app/config.yaml; \
+		echo "Created app/config.yaml from app/config.sample.yaml — review and adjust."; \
+	fi
+
+# Build/run recipes source .env at recipe-execution time (not at make
+# parse time) so they work in the same invocation that bootstrapped
+# .env via the `env` prereq. Without this, the inner $$IMAGE_NAME /
+# $$PORT would be empty on the very first `make build` after a fresh
+# checkout — the parse-time `include .env` happens before `env` runs.
+define _require_env
+	if [ ! -f .env ]; then echo "ERROR: .env missing"; exit 1; fi; \
+	. ./.env; \
+	for v in $(1); do \
+		eval "val=\$$$$v"; \
+		[ -n "$$val" ] || { echo "ERROR: $$v is empty in .env (see env.example)"; exit 1; }; \
+	done
+endef
+
 .PHONY: build
-build:
+build: env config
 	# Build the Docker image.
-	docker build -t application-portfolio .
+	@$(call _require_env,IMAGE_NAME); \
+		docker build -t "$$IMAGE_NAME" .
 
 .PHONY: build-no-cache
-build-no-cache:
+build-no-cache: env config
 	# Build the Docker image without cache.
-	docker build --no-cache -t application-portfolio .
+	@$(call _require_env,IMAGE_NAME); \
+		docker build --no-cache -t "$$IMAGE_NAME" .
 
 .PHONY: up
-up:
+up: env config
 	# Start the application using docker-compose with build.
 	docker-compose up -d --build --force-recreate
 
@@ -34,23 +71,25 @@ down:
 	- docker-compose down
 
 .PHONY: run-dev
-run-dev:
+run-dev: env config config
 	# Run the container in development mode (hot-reload).
-	docker run -d \
-		-p $(PORT):$(PORT) \
-		--name portfolio \
-		-v $(PWD)/app/:/app \
-		-e FLASK_APP=app.py \
-		-e FLASK_ENV=development \
-		application-portfolio
+	@$(call _require_env,IMAGE_NAME PORT); \
+		docker run -d \
+			-p "$$PORT:$$PORT" \
+			--name portfolio \
+			-v "$(PWD)/app/:/app" \
+			-e FLASK_APP=app.py \
+			-e FLASK_ENV=development \
+			"$$IMAGE_NAME"
 
 .PHONY: run-prod
-run-prod:
+run-prod: env config config
 	# Run the container in production mode.
-	docker run -d \
-		-p $(PORT):$(PORT) \
-		--name portfolio \
-		application-portfolio
+	@$(call _require_env,IMAGE_NAME PORT); \
+		docker run -d \
+			-p "$$PORT:$$PORT" \
+			--name portfolio \
+			"$$IMAGE_NAME"
 
 .PHONY: logs
 logs:
@@ -58,12 +97,12 @@ logs:
 	docker logs -f portfolio
 
 .PHONY: dev
-dev:
+dev: env config
 	# Start the application in development mode using docker-compose.
 	FLASK_ENV=development docker-compose up -d
 
 .PHONY: prod
-prod:
+prod: env config
 	# Start the application in production mode using docker-compose (with build).
 	docker-compose up -d --build
 
@@ -78,9 +117,10 @@ delete:
 	- docker rm -f portfolio
 
 .PHONY: browse
-browse:
-	# Open the application in the browser at http://localhost:$(PORT)
-	chromium http://localhost:$(PORT)
+browse: env
+	# Open the application in the browser at http://localhost:$$PORT
+	@$(call _require_env,PORT); \
+		chromium "http://localhost:$$PORT"
 
 .PHONY: install
 install:

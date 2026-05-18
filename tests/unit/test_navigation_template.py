@@ -25,6 +25,14 @@ class TestNavigationTemplate(unittest.TestCase):
         environment.globals["url_for"] = lambda _endpoint, filename: (
             f"/static/{filename}"
         )
+        environment.globals["asset_src"] = lambda asset: (
+            (asset or {}).get("external_url")
+            or (
+                f"/static/{(asset or {}).get('cache')}"
+                if (asset or {}).get("cache")
+                else ""
+            )
+        )
 
         rendered = environment.get_template("moduls/navigation.html.j2").render(
             menu_type="header",

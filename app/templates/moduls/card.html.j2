@@ -4,9 +4,9 @@
       <div class="card-img-top">
         {% if card.icon.cache and card.icon.cache.endswith('.svg') %}
           {{ include_svg(card.icon.cache) }}
-        {% elif card.icon.cache %}
+        {% elif card.icon.cache or card.icon.external_url %}
           <img
-            src="{{ url_for('static', filename=card.icon.cache) }}"
+            src="{{ asset_src(card.icon) }}"
             alt="{{ card.title }}"
             style="width:100px; height:auto;"
             onerror="this.style.display='none'; this.nextElementSibling?.style.display='inline-block';">
