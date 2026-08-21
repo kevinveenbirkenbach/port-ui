@@ -22,6 +22,8 @@ A lightweight, Docker-powered portfolio/landing-page generator—fully customiza
   Auto-cache assets for lightning-fast loading.  
 - **Responsive Design**  
   Built on Bootstrap; looks great on desktop, tablet & mobile.  
+- **30 Languages**  
+  Browser-negotiated, RTL-aware, with machine translation for your own content.  
 - **YAML-Driven**  
   All content & structure defined in a simple `config.yaml`.  
 - **CLI Control**  
@@ -139,11 +141,54 @@ company:
 
 ---
 
+## 🌍 Languages
+
+The interface ships in 30 languages. `/` serves the best match for the visitor's
+`Accept-Language` header, `/<code>/` forces one, and a switcher in the navbar
+lists them all. Right-to-left languages (`ar`, `fa`, `he`, `ur`) get
+`dir="rtl"` and Bootstrap's RTL stylesheet automatically.
+
+Translations live in two catalogues, both keyed by the English source string:
+
+| Path | Tracked | Holds |
+| --- | --- | --- |
+| `app/i18n/ui/<code>.yaml` | yes | Interface strings, shipped complete for all 29 non-English languages. English is the source and has no file. |
+| `app/i18n/content/<code>.yaml` | no | Your `config.yaml` prose, generated per deployment. |
+
+A string with no catalogue entry falls back to English, so a half-filled
+catalogue degrades instead of breaking.
+
+Fill the content catalogues from a [LibreTranslate](https://libretranslate.com/)
+instance — set `LIBRETRANSLATE_URL` in `.env`, then:
+
+```bash
+make i18n
+```
+
+Existing entries are never overwritten, so corrections you make by hand survive
+later runs. Only prose (`description`, `text`, `warning`, `info`, `subtitel`) is
+filled automatically; `name` and `title` are left to you, because a machine
+cannot tell the menu label "Pictures" from the brand "Mastodon". Write those
+into the content catalogue yourself when you want them translated.
+
+---
+
 ## 🚢 Production Deployment
 
 * Use a reverse proxy (NGINX/Apache).
 * Secure with SSL/TLS.
 * Swap to a production database if needed.
+
+Because every page carries a canonical URL and 30 `hreflang` alternates, two
+details of the proxy setup now matter:
+
+* **Set `TRUSTED_HOSTS`** in `.env` to your public hostname(s), comma-separated.
+  Left empty, the app reflects whatever `Host` header arrives into its canonical,
+  `hreflang` and redirect URLs — so a shared cache in front of it can be made to
+  store a redirect pointing somewhere else.
+* **Have the proxy send `X-Forwarded-Proto`.** Without it the app cannot know TLS
+  terminated upstream and every canonical URL claims `http://`. `X-Forwarded-Host`
+  is deliberately *not* trusted; set `Host` to the public name instead.
 
 ---
 

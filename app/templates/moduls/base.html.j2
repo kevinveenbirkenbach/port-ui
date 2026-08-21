@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang }}" dir="{{ lang_dir }}">
     <head>
         <title>{{platform.titel}}</title>
         <meta charset="utf-8" >
@@ -8,8 +8,13 @@
             type="image/x-icon"
             href="{{ asset_src(platform.favicon) }}"
         >
+        <link rel="canonical" href="{{ url_for('localized_index', lang=lang, _external=True) }}">
+        {% for code in languages %}
+        <link rel="alternate" hreflang="{{ code }}" href="{{ url_for('localized_index', lang=code, _external=True) }}">
+        {% endfor %}
+        <link rel="alternate" hreflang="x-default" href="{{ url_for('index', _external=True) }}">
         <!-- Bootstrap CSS only -->
-        <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+        <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap' ~ ('.rtl' if lang_dir == 'rtl' else '') ~ '.min.css') }}" rel="stylesheet">
         <!-- Bootstrap JavaScript Bundle with Popper -->
         <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
         <!-- Bootstrap Icons -->
@@ -60,12 +65,13 @@
                     <p itemprop="name">{{ company.titel }} <br />
                     {{ company.subtitel }}</p>
                     <span><i class="fa-solid fa-location-dot"></i> {{ company.address.values() | join(", ") }}</span>
-                    <p><a href="{{company.imprint_url}}" class="iframe-link"><i class="fa-solid fa-scale-balanced"></i> Imprint</a></p>
+                    <p><a href="{{company.imprint_url}}" class="iframe-link"><i class="fa-solid fa-scale-balanced"></i> {{ t('Imprint') }}</a></p>
                 </div>
             </footer>
         </div>
         <!-- Include modal -->
         {% include "moduls/modal.html.j2" %}
+        <script>window.I18N = {{ ui_strings | tojson }};</script>
         {% for name in [
             'modal',
             'navigation',

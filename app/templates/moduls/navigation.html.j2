@@ -98,6 +98,23 @@
                     </li>
                 {% endif %}
             {% endfor %}
+            {% if menu_type == "header" %}
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle btn btn-light" id="navbarDropdownLanguage" role="button" data-bs-toggle="dropdown" data-bs-display="dynamic" aria-expanded="false" title="{{ t('Language') }}">
+                    <i class="fa-solid fa-language"></i> {{ languages[lang] }}
+                </a>
+                <ul class="dropdown-menu">
+                    {% for code, endonym in languages.items() %}
+                    <li>
+                        <a class="dropdown-item {% if code == lang %}active{% endif %}"
+                           href="{{ url_for('localized_index', lang=code) }}"
+                           hreflang="{{ code }}"
+                           lang="{{ code }}">{{ endonym }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </li>
+            {% endif %}
         </ul>
     </div>
 </nav>

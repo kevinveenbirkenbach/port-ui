@@ -1,4 +1,5 @@
 app/config.yaml
+app/i18n/content/
 *__pycache__*
 app/static/cache/*
 .env

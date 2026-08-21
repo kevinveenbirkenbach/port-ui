@@ -16,14 +16,14 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="dynamicModalLabel"></h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t('Close') }}"></button>
       </div>
       <div class="modal-body">
         <!-- Warning box with Markdown -->
-        {{ alert_box('dynamicModalWarning', 'alert-warning', 'fa-solid fa-triangle-exclamation', 'Warning', 'dynamicModalWarningText') }}
-        
+        {{ alert_box('dynamicModalWarning', 'alert-warning', 'fa-solid fa-triangle-exclamation', t('Warning'), 'dynamicModalWarningText') }}
+
         <!-- Info box with Markdown -->
-        {{ alert_box('dynamicModalInfo', 'alert-info', 'fa-solid fa-circle-info', 'Information', 'dynamicModalInfoText') }}
+        {{ alert_box('dynamicModalInfo', 'alert-info', 'fa-solid fa-circle-info', t('Information'), 'dynamicModalInfoText') }}
 
         <!-- Description text -->
         <div id="dynamicDescriptionText" class="mt-2 d-none"></div>
@@ -31,7 +31,7 @@
         <!-- Input box for Identifier -->
         <div id="dynamicIdentifierBox" class="input-group mt-2 d-none">
           <input type="text" id="dynamicModalContent" class="form-control" readonly>
-          <button class="btn btn-outline-secondary" type="button" id="dynamicCopyButton">Copy</button>
+          <button class="btn btn-outline-secondary" type="button" id="dynamicCopyButton">{{ t('Copy') }}</button>
         </div>
 
         <!-- Link -->
@@ -40,13 +40,13 @@
         </div>
 
         <!-- Options -->
-        {{ list_section('dynamicChildrenSection', 'Options', 'dynamicChildrenList') }}
+        {{ list_section('dynamicChildrenSection', t('Options'), 'dynamicChildrenList') }}
 
         <!-- Alternatives -->
-        {{ list_section('dynamicAlternativesSection', 'Alternatives', 'dynamicAlternativesList') }}
+        {{ list_section('dynamicAlternativesSection', t('Alternatives'), 'dynamicAlternativesList') }}
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="closeAllModals()">Close</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="closeAllModals()">{{ t('Close') }}</button>
       </div>
     </div>
   </div>

@@ -3,10 +3,12 @@ import os
 
 import requests
 import yaml
-from flask import Flask, current_app, render_template, url_for
+from flask import Flask, current_app, make_response, render_template, request, url_for
 from markupsafe import Markup
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 try:
+    from app.utils import i18n
     from app.utils.asset_resolver import asset_src, resolve_asset_cache
     from app.utils.cache_manager import CacheManager
     from app.utils.compute_card_classes import compute_card_classes
@@ -16,6 +18,10 @@ except ImportError:  # pragma: no cover - supports running from the app/ directo
     from utils.cache_manager import CacheManager
     from utils.compute_card_classes import compute_card_classes
     from utils.configuration_resolver import ConfigurationResolver
+
+    from utils import i18n
+
+TRANSLATED_SECTIONS = ("cards", "company", "navigation", "platform")
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -42,6 +48,8 @@ def load_config(app):
     resolver = ConfigurationResolver(config)
     resolver.resolve_links()
     app.config.update(resolver.get_config())
+    app.config["TRANSLATED_CONFIG"] = {}
+    i18n.clear_catalogs()
 
 
 def cache_icons_and_logos(app):
@@ -59,6 +67,23 @@ def cache_icons_and_logos(app):
 
 # Initialize Flask app
 app = Flask(__name__)
+
+app.jinja_options = {**app.jinja_options, "autoescape": True}
+
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
+
+
+def trusted_hosts(raw):
+    """Parse a comma-separated host list, or None when nothing is configured.
+
+    Args:
+        raw: the ``TRUSTED_HOSTS`` value, possibly empty.
+    """
+    hosts = [host.strip() for host in raw.split(",") if host.strip()]
+    return hosts or None
+
+
+app.config["TRUSTED_HOSTS"] = trusted_hosts(os.getenv("TRUSTED_HOSTS", ""))
 
 # Load configuration and cache assets on startup
 load_config(app)
@@ -91,34 +116,77 @@ def reload_config_in_dev():
         cache_icons_and_logos(app)
 
 
-@app.route("/")
-def index():
-    """Render the main index page."""
-    cards = app.config["cards"]
-    lg_classes, md_classes = compute_card_classes(cards)
-    apod_bg = None
+def translated_config(lang):
+    """Return the configuration sections translated into ``lang``, memoized.
+
+    The memo is dropped by ``load_config``, so a development reload picks up
+    edited content on the next request.
+    """
+    memo = app.config["TRANSLATED_CONFIG"]
+    if lang not in memo:
+        source = {section: app.config[section] for section in TRANSLATED_SECTIONS}
+        memo[lang] = i18n.translate_tree(source, lang)
+    return memo[lang]
+
+
+def apod_background():
+    """Return today's NASA APOD image URL, or None when unavailable."""
     api_key = app.config.get("NASA_API_KEY")
-    if api_key:
+    if not api_key:
+        return None
+
+    try:
         resp = requests.get(
             "https://api.nasa.gov/planetary/apod",
             params={"api_key": api_key},
             timeout=10,
         )
-        if resp.ok:
-            data = resp.json()
-            if data.get("media_type") == "image":
-                apod_bg = data.get("url")
+    except requests.RequestException:
+        logging.warning("APOD lookup failed", exc_info=True)
+        return None
+
+    if not resp.ok:
+        return None
+
+    data = resp.json()
+    return data.get("url") if data.get("media_type") == "image" else None
+
+
+def render_index(lang):
+    """Render the index page in ``lang``."""
+    config = translated_config(lang)
+    cards = config["cards"]
+    lg_classes, md_classes = compute_card_classes(cards)
 
     return render_template(
         "pages/index.html.j2",
         cards=cards,
-        company=app.config["company"],
-        navigation=app.config["navigation"],
-        platform=app.config["platform"],
+        company=config["company"],
+        navigation=config["navigation"],
+        platform=config["platform"],
         lg_classes=lg_classes,
         md_classes=md_classes,
-        apod_bg=apod_bg,
+        apod_bg=apod_background(),
+        lang=lang,
+        lang_dir=i18n.direction(lang),
+        languages=i18n.LANGUAGES,
+        ui_strings=i18n.ui_strings(lang),
+        t=lambda source: i18n.catalog(lang).get(source, source),
     )
+
+
+@app.route("/")
+def index():
+    """Render the index page in the language the browser asks for."""
+    response = make_response(render_index(i18n.negotiate(request.accept_languages)))
+    response.headers["Vary"] = "Accept-Language"
+    return response
+
+
+@app.route(f"/<any({','.join(i18n.LANGUAGES)}):lang>/")
+def localized_index(lang):
+    """Render the index page in an explicitly requested language."""
+    return render_index(lang)
 
 
 if __name__ == "__main__":

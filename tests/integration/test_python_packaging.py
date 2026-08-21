@@ -1,6 +1,15 @@
+import re
 import tomllib
 import unittest
 from pathlib import Path
+
+
+def distributions(requirements):
+    """Return the distribution names of PEP 508 requirement strings."""
+    return {
+        re.split(r"[<>=!~\[; ]", requirement, maxsplit=1)[0]
+        for requirement in requirements
+    }
 
 
 class TestPythonPackaging(unittest.TestCase):
@@ -18,10 +27,19 @@ class TestPythonPackaging(unittest.TestCase):
         self.assertEqual(build_system["build-backend"], "setuptools.build_meta")
         self.assertIn("setuptools>=69", build_system["requires"])
         self.assertGreaterEqual(
-            set(project["dependencies"]),
+            distributions(project["dependencies"]),
             {"flask", "pyyaml", "requests"},
         )
         self.assertEqual(project["requires-python"], ">=3.12")
+
+    def test_flask_is_pinned_to_a_version_that_honours_trusted_hosts(self):
+        requirement = next(
+            item
+            for item in self.pyproject["project"]["dependencies"]
+            if item.startswith("flask")
+        )
+
+        self.assertIn(">=3.1", requirement)
 
     def test_pyproject_defines_dev_dependencies_and_package_contents(self):
         project = self.pyproject["project"]
@@ -30,8 +48,8 @@ class TestPythonPackaging(unittest.TestCase):
         package_data = setuptools_config["package-data"]["app"]
 
         self.assertGreaterEqual(
-            set(project["optional-dependencies"]["dev"]),
-            {"bandit", "pip-audit", "ruff"},
+            distributions(project["optional-dependencies"]["dev"]),
+            {"bandit", "pip-audit", "ruff", "yamllint"},
         )
         self.assertEqual(setuptools_config["py-modules"], ["main"])
         self.assertEqual(package_find["include"], ["app", "app.*"])

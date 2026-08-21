@@ -2,7 +2,7 @@ import unittest
 from html.parser import HTMLParser
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader
 
 
 class AnchorCollector(HTMLParser):
@@ -20,10 +20,12 @@ class TestNavigationTemplate(unittest.TestCase):
         template_dir = Path(__file__).resolve().parents[2] / "app" / "templates"
         environment = Environment(
             loader=FileSystemLoader(template_dir),
-            autoescape=select_autoescape(),
+            autoescape=True,
         )
-        environment.globals["url_for"] = lambda _endpoint, filename: (
-            f"/static/{filename}"
+        environment.globals["url_for"] = lambda endpoint, **kwargs: (
+            f"/static/{kwargs['filename']}"
+            if endpoint == "static"
+            else f"/{kwargs['lang']}/"
         )
         environment.globals["asset_src"] = lambda asset: (
             (asset or {}).get("external_url")
@@ -36,6 +38,9 @@ class TestNavigationTemplate(unittest.TestCase):
 
         rendered = environment.get_template("moduls/navigation.html.j2").render(
             menu_type="header",
+            lang="en",
+            languages={"en": "English", "de": "Deutsch"},
+            t=lambda source: source,
             platform={
                 "titel": "Portfolio",
                 "logo": {"cache": "logo.png"},
@@ -70,8 +75,15 @@ class TestNavigationTemplate(unittest.TestCase):
             and "dropdown-toggle" in anchor.get("class", "")
         ]
 
-        self.assertEqual(len(dropdown_toggles), 1)
-        self.assertEqual(dropdown_toggles[0].get("data-bs-toggle"), "dropdown")
+        self.assertEqual(len(dropdown_toggles), 2)
+        for toggle in dropdown_toggles:
+            self.assertEqual(toggle.get("data-bs-toggle"), "dropdown")
+
+        language_links = [
+            anchor for anchor in parser.anchors if anchor.get("hreflang") == "de"
+        ]
+        self.assertEqual(len(language_links), 1)
+        self.assertEqual(language_links[0]["href"], "/de/")
 
 
 if __name__ == "__main__":

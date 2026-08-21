@@ -30,6 +30,10 @@ copyFile(
   path.join(VENDOR, 'bootstrap', 'css', 'bootstrap.min.css')
 );
 copyFile(
+  path.join(NM, 'bootstrap', 'dist', 'css', 'bootstrap.rtl.min.css'),
+  path.join(VENDOR, 'bootstrap', 'css', 'bootstrap.rtl.min.css')
+);
+copyFile(
   path.join(NM, 'bootstrap', 'dist', 'js', 'bootstrap.bundle.min.js'),
   path.join(VENDOR, 'bootstrap', 'js', 'bootstrap.bundle.min.js')
 );
