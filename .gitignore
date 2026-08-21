@@ -11,3 +11,4 @@ hadolint-results.sarif
 build/
 *.egg-info/
 app/core.*
+.mcp.json
