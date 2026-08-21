@@ -9,7 +9,9 @@ description = "A lightweight YAML-driven portfolio and landing-page generator."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "flask",
+    # 3.1 introduced TRUSTED_HOSTS; an older Flask accepts the config key and
+    # ignores it, which would silently disable the host-forgery check.
+    "flask>=3.1",
     "pyyaml",
     "requests",
 ]
@@ -19,6 +21,7 @@ dev = [
     "bandit",
     "pip-audit",
     "ruff",
+    "yamllint",
 ]
 
 [tool.setuptools]
@@ -30,6 +33,8 @@ include = ["app", "app.*"]
 [tool.setuptools.package-data]
 app = [
     "config.sample.yaml",
+    "i18n/ui/*.yaml",
+    "i18n/content/*.yaml",
     "templates/**/*.j2",
     "static/css/*.css",
     "static/js/*.js",

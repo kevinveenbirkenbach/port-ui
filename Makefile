@@ -78,6 +78,8 @@ run-dev: env config config
 			-p "$$PORT:$$PORT" \
 			--name portfolio \
 			-v "$(PWD)/app/:/app" \
+			-e PORT="$$PORT" \
+			-e TRUSTED_HOSTS="$$TRUSTED_HOSTS" \
 			-e FLASK_APP=app.py \
 			-e FLASK_ENV=development \
 			"$$IMAGE_NAME"
@@ -89,6 +91,8 @@ run-prod: env config config
 		docker run -d \
 			-p "$$PORT:$$PORT" \
 			--name portfolio \
+			-e PORT="$$PORT" \
+			-e TRUSTED_HOSTS="$$TRUSTED_HOSTS" \
 			"$$IMAGE_NAME"
 
 .PHONY: logs
@@ -132,6 +136,14 @@ install-dev:
 	# Install runtime and developer dependencies from pyproject.toml.
 	$(PYTHON) -m pip install -e ".[dev]"
 
+.PHONY: i18n
+i18n: env config
+	# Fill missing content translations in app/i18n/content/ via LibreTranslate.
+	@$(call _require_env,LIBRETRANSLATE_URL); \
+		$(PYTHON) utils/i18n_sync.py \
+			--url "$$LIBRETRANSLATE_URL" \
+			--api-key "$$LIBRETRANSLATE_API_KEY"
+
 .PHONY: lint-actions
 lint-actions:
 	# Lint GitHub Actions workflows.
@@ -147,6 +159,21 @@ lint-python: install-dev
 lint-docker:
 	# Lint the Dockerfile.
 	docker run --rm -i hadolint/hadolint < Dockerfile
+
+.PHONY: lint-yaml
+lint-yaml: install-dev
+	# Lint YAML for duplicate keys and ambiguous scalars (see .yamllint).
+	$(PYTHON) -m yamllint --strict .
+
+.PHONY: lint-js
+lint-js: node-deps
+	# Lint the browser and Cypress JavaScript.
+	cd app && env -u ELECTRON_RUN_AS_NODE npx eslint .
+
+.PHONY: lint-shell
+lint-shell:
+	# Lint the shell scripts.
+	docker run --rm -v "$$PWD:/mnt" -w /mnt koalaman/shellcheck:stable scripts/*.sh
 
 .PHONY: test-lint
 test-lint:
@@ -169,7 +196,7 @@ test-security: install
 	$(PYTHON) -m unittest discover -s tests/security -t .
 
 .PHONY: lint
-lint: lint-actions lint-python lint-docker test-lint
+lint: lint-actions lint-python lint-yaml lint-js lint-docker lint-shell test-lint
 	# Run the full lint suite.
 
 .PHONY: security
@@ -179,9 +206,20 @@ security: install-dev test-security
 	$(PYTHON) utils/export_runtime_requirements.py > /tmp/portfolio-runtime-requirements.txt
 	$(PYTHON) -m pip_audit -r /tmp/portfolio-runtime-requirements.txt
 
+.PHONY: node-deps
+node-deps:
+	# Install the Cypress binary and the browser vendor assets into app/.
+	cd app && npm install
+
 .PHONY: test-e2e
-test-e2e:
-	# Run Cypress end-to-end tests via act (stop portfolio container to free port first).
+test-e2e: env config node-deps
+	# Run Cypress against a locally started Flask app — no act, no runner image.
+	@$(call _require_env,PORT); \
+		PORT="$$PORT" PYTHON="$(PYTHON)" scripts/run-e2e.sh
+
+.PHONY: test-e2e-act
+test-e2e-act:
+	# Run the CI end-to-end job through act (stop portfolio container to free port first).
 	-docker stop portfolio 2>/dev/null || true
 	$(ACT) workflow_dispatch -W .github/workflows/tests.yml -j e2e
 	-docker start portfolio 2>/dev/null || true

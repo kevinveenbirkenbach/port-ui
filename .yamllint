@@ -1,0 +1,23 @@
+---
+# Correctness only. No `extends: default`, so nothing but the rules below runs:
+# the repository predates this linter and its cosmetic findings (indentation,
+# line length, trailing spaces) would be noise nobody acts on.
+#
+# key-duplicates is the rule that earns its keep: PyYAML keeps the last of two
+# identical keys without complaining, so a duplicated entry in a translation
+# catalogue silently drops a translation.
+ignore: |
+  .git/
+  .venv/
+  venv/
+  node_modules/
+  app/node_modules/
+  app/static/vendor/
+  build/
+  .ruff_cache/
+
+rules:
+  key-duplicates: enable
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true

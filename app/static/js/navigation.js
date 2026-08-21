@@ -169,7 +169,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
     
   function adjustMenuPosition(submenu, parent, isTopLevel) {
-    const rect = submenu.getBoundingClientRect();
     const parentRect = parent.getBoundingClientRect();
 
     const spaceAbove = parentRect.top;
