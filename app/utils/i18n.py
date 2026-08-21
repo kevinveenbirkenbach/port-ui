@@ -11,46 +11,17 @@ from pathlib import Path
 
 import yaml
 
+try:
+    from app.utils.languages import LANGUAGES, RTL_LANGUAGES
+except ImportError:  # pragma: no cover - supports running from the app/ directory.
+    from utils.languages import LANGUAGES, RTL_LANGUAGES
+
 I18N_DIR = Path(__file__).resolve().parent.parent / "i18n"
 UI_DIR = I18N_DIR / "ui"
 CONTENT_DIR = I18N_DIR / "content"
 
 SOURCE_LANGUAGE = "en"
 
-LANGUAGES = {
-    "en": "English",
-    "zh": "中文",
-    "hi": "हिन्दी",
-    "es": "Español",
-    "fr": "Français",
-    "ar": "العربية",
-    "bn": "বাংলা",
-    "pt": "Português",
-    "ru": "Русский",
-    "ur": "اردو",
-    "id": "Bahasa Indonesia",
-    "de": "Deutsch",
-    "ja": "日本語",
-    "tr": "Türkçe",
-    "ko": "한국어",
-    "vi": "Tiếng Việt",
-    "it": "Italiano",
-    "th": "ไทย",
-    "pl": "Polski",
-    "nl": "Nederlands",
-    "uk": "Українська",
-    "fa": "فارسی",
-    "ro": "Română",
-    "el": "Ελληνικά",
-    "cs": "Čeština",
-    "sv": "Svenska",
-    "hu": "Magyar",
-    "he": "עברית",
-    "da": "Dansk",
-    "fi": "Suomi",
-}
-
-RTL_LANGUAGES = frozenset({"ar", "fa", "he", "ur"})
 
 AUTOFILL_KEYS = frozenset({"description", "text", "warning", "info", "subtitel"})
 

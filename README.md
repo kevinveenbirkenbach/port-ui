@@ -22,8 +22,8 @@ A lightweight, Docker-powered portfolio/landing-page generator—fully customiza
   Auto-cache assets for lightning-fast loading.  
 - **Responsive Design**  
   Built on Bootstrap; looks great on desktop, tablet & mobile.  
-- **30 Languages**  
-  Browser-negotiated, RTL-aware, with machine translation for your own content.  
+- **184 Languages**  
+  Every ISO 639-1 code, browser-negotiated, RTL-aware, with machine translation for your own content.  
 - **YAML-Driven**  
   All content & structure defined in a simple `config.yaml`.  
 - **CLI Control**  
@@ -143,16 +143,19 @@ company:
 
 ## 🌍 Languages
 
-The interface ships in 30 languages. `/` serves the best match for the visitor's
+Every ISO 639-1 language — all 184 two-letter codes — has a URL, a display
+name in its own script and a writing direction. The interface ships translated
+for 29 of them; the rest fall back to English string by string until a
+catalogue is filled. `/` serves the best match for the visitor's
 `Accept-Language` header, `/<code>/` forces one, and a switcher in the navbar
-lists them all. Right-to-left languages (`ar`, `fa`, `he`, `ur`) get
-`dir="rtl"` and Bootstrap's RTL stylesheet automatically.
+lists them all. The ten right-to-left languages get `dir="rtl"` and Bootstrap's RTL
+stylesheet automatically.
 
 Translations live in two catalogues, both keyed by the English source string:
 
 | Path | Tracked | Holds |
 | --- | --- | --- |
-| `app/i18n/ui/<code>.yaml` | yes | Interface strings, shipped complete for all 29 non-English languages. English is the source and has no file. |
+| `app/i18n/ui/<code>.yaml` | yes | Interface strings. Shipped for 29 languages; English is the source and has no file. |
 | `app/i18n/content/<code>.yaml` | no | Your `config.yaml` prose, generated per deployment. |
 
 A string with no catalogue entry falls back to English, so a half-filled
@@ -165,8 +168,10 @@ instance — set `LIBRETRANSLATE_URL` in `.env`, then:
 make i18n
 ```
 
-Existing entries are never overwritten, so corrections you make by hand survive
-later runs. Only prose (`description`, `text`, `warning`, `info`, `subtitel`) is
+This fills the interface strings of the languages that ship no catalogue as
+well. Existing entries are never overwritten, and a string the shipped
+catalogue already covers is never requested, so corrections you make by hand
+survive later runs. Only prose (`description`, `text`, `warning`, `info`, `subtitel`) is
 filled automatically; `name` and `title` are left to you, because a machine
 cannot tell the menu label "Pictures" from the brand "Mastodon". Write those
 into the content catalogue yourself when you want them translated.
@@ -179,7 +184,7 @@ into the content catalogue yourself when you want them translated.
 * Secure with SSL/TLS.
 * Swap to a production database if needed.
 
-Because every page carries a canonical URL and 30 `hreflang` alternates, two
+Because every page carries a canonical URL and 184 `hreflang` alternates, two
 details of the proxy setup now matter:
 
 * **Set `TRUSTED_HOSTS`** in `.env` to your public hostname(s), comma-separated.

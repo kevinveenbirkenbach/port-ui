@@ -103,7 +103,7 @@
                 <a class="nav-link dropdown-toggle btn btn-light" id="navbarDropdownLanguage" role="button" data-bs-toggle="dropdown" data-bs-display="dynamic" aria-expanded="false" title="{{ t('Language') }}">
                     <i class="fa-solid fa-language"></i> {{ languages[lang] }}
                 </a>
-                <ul class="dropdown-menu">
+                <ul class="dropdown-menu language-menu">
                     {% for code, endonym in languages.items() %}
                     <li>
                         <a class="dropdown-item {% if code == lang %}active{% endif %}"

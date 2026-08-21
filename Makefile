@@ -144,6 +144,15 @@ i18n: env config
 			--url "$$LIBRETRANSLATE_URL" \
 			--api-key "$$LIBRETRANSLATE_API_KEY"
 
+.PHONY: i18n-ui
+i18n-ui: env
+	# Fill missing interface translations in app/i18n/ui/ via LibreTranslate.
+	@$(call _require_env,LIBRETRANSLATE_URL); \
+		$(PYTHON) utils/i18n_sync.py \
+			--catalog ui \
+			--url "$$LIBRETRANSLATE_URL" \
+			--api-key "$$LIBRETRANSLATE_API_KEY"
+
 .PHONY: lint-actions
 lint-actions:
 	# Lint GitHub Actions workflows.

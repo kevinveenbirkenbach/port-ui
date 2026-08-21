@@ -120,6 +120,12 @@ div#navbarNavfooter .navbar-nav {
   flex-wrap: nowrap;
 }
 
+.dropdown-menu.language-menu {
+  max-height: 60vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 main, footer, header, nav {
   position: relative;
   box-shadow: 

@@ -53,7 +53,7 @@ describe('Language switcher', () => {
     cy.visit('/en/');
   });
 
-  it('names the active language and offers all thirty', () => {
+  it('names the active language and offers every ISO 639-1 code', () => {
     cy.get('#navbarDropdownLanguage')
       .should('have.attr', 'data-bs-toggle', 'dropdown')
       .and('contain.text', 'English');
@@ -61,7 +61,7 @@ describe('Language switcher', () => {
     cy.get('#navbarDropdownLanguage')
       .parent('.nav-item')
       .find('> .dropdown-menu a.dropdown-item')
-      .should('have.length', 30);
+      .should('have.length', 184);
   });
 
   it('marks the active language', () => {
@@ -200,6 +200,21 @@ describe('Translated interface details', () => {
     );
   });
 
+  it('scrolls inside the language menu instead of past the page', () => {
+    cy.viewport(1280, 720);
+    cy.visit('/en/');
+    cy.get('#navbarDropdownLanguage').click();
+
+    cy.get('.dropdown-menu.language-menu').should($menu => {
+      const menu = $menu[0];
+      expect(menu.scrollHeight, 'taller than it shows').to.be.greaterThan(
+        menu.clientHeight,
+      );
+      expect(menu.getBoundingClientRect().height).to.be.lessThan(720);
+      expect(getComputedStyle(menu).overflowY).to.eq('auto');
+    });
+  });
+
   it('offers the switcher in the header only', () => {
     cy.viewport(1280, 720);
     cy.visit('/en/');
@@ -215,7 +230,7 @@ describe('Search engine metadata', () => {
   });
 
   it('declares an alternate for every language plus a default', () => {
-    cy.get('link[rel="alternate"][hreflang]').should('have.length', 31);
+    cy.get('link[rel="alternate"][hreflang]').should('have.length', 185);
     cy.get('link[rel="alternate"][hreflang="x-default"]').should('exist');
     cy.get('link[rel="alternate"][hreflang="ja"]')
       .should('have.attr', 'href')

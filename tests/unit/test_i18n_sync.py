@@ -224,7 +224,7 @@ class TestSync(unittest.TestCase):
         session = Mock(get=Mock(return_value=listing), post=Mock(return_value=answer))
 
         with patch.object(i18n_sync.requests, "Session", return_value=session):
-            i18n_sync.sync("http://lt", "", set(sources), ["de"])
+            i18n_sync.sync("http://lt", "", set(sources), ["de"], self.directory)
         return session
 
     def test_missing_entries_are_written(self):
@@ -267,13 +267,26 @@ class TestSync(unittest.TestCase):
 
         self.assertEqual(self.path.read_text(encoding="utf-8"), original)
 
-    def test_the_content_directory_is_created(self):
+    def test_a_string_the_shipped_catalog_covers_is_not_requested(self):
+        ui = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, ui, True)
+        self.addCleanup(setattr, i18n, "UI_DIR", i18n.UI_DIR)
+        i18n.UI_DIR = ui
+        (ui / "de.yaml").write_text("Close: Schliessen\n", encoding="utf-8")
+
+        session = self._run(["Close", "Hello"])
+
+        self.assertEqual(session.post.call_count, 1)
+        self.assertNotIn("Close", yaml.safe_load(self.path.read_text(encoding="utf-8")))
+
+    def test_the_catalog_directory_is_created(self):
         nested = self.directory / "content"
-        i18n.CONTENT_DIR = nested
+        self.directory = nested
+        self.path = nested / "de.yaml"
 
         self._run(["Hello"])
 
-        self.assertTrue((nested / "de.yaml").is_file())
+        self.assertTrue(self.path.is_file())
 
 
 if __name__ == "__main__":

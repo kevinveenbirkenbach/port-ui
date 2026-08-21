@@ -18,8 +18,10 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "babel",
     "bandit",
     "pip-audit",
+    "pycountry",
     "ruff",
     "yamllint",
 ]

@@ -35,12 +35,12 @@ class TestNegotiate(unittest.TestCase):
 
 class TestDirection(unittest.TestCase):
     def test_every_right_to_left_language_is_marked(self):
-        for code in ("ar", "fa", "he", "ur"):
+        for code in ("ar", "dv", "fa", "he", "ks", "ps", "sd", "ug", "ur", "yi"):
             with self.subTest(code=code):
                 self.assertEqual(i18n.direction(code), "rtl")
 
     def test_other_languages_are_left_to_right(self):
-        for code in set(i18n.LANGUAGES) - {"ar", "fa", "he", "ur"}:
+        for code in set(i18n.LANGUAGES) - set(i18n.RTL_LANGUAGES):
             with self.subTest(code=code):
                 self.assertEqual(i18n.direction(code), "ltr")
 
@@ -157,9 +157,17 @@ class TestCatalogMerge(unittest.TestCase):
 
 
 class TestShippedCatalogs(unittest.TestCase):
-    def test_thirty_languages_are_offered(self):
-        self.assertEqual(len(i18n.LANGUAGES), 30)
-        self.assertIn(i18n.SOURCE_LANGUAGE, i18n.LANGUAGES)
+    def test_every_iso_639_1_language_is_offered(self):
+        self.assertEqual(len(i18n.LANGUAGES), 184)
+        self.assertEqual(i18n.SOURCE_LANGUAGE, next(iter(i18n.LANGUAGES)))
+        self.assertGreaterEqual(
+            set(i18n.LANGUAGES), {"en", "de", "zh", "ar", "he", "vo", "za", "cu"}
+        )
+
+    def test_every_display_name_is_filled_in(self):
+        blank = [code for code, name in i18n.LANGUAGES.items() if not name.strip()]
+
+        self.assertFalse(blank, f"No display name for: {blank}")
 
     def test_every_code_is_usable_in_the_route_converter(self):
         offenders = [
@@ -168,24 +176,21 @@ class TestShippedCatalogs(unittest.TestCase):
 
         self.assertFalse(offenders, f"Not usable in the route converter: {offenders}")
 
-    def test_every_language_but_the_source_ships_a_ui_catalog(self):
-        missing = [
-            code
-            for code in i18n.LANGUAGES
-            if code != i18n.SOURCE_LANGUAGE
-            and not (i18n.UI_DIR / f"{code}.yaml").is_file()
+    def test_every_shipped_catalog_names_a_known_language(self):
+        stray = [
+            path.stem
+            for path in i18n.UI_DIR.glob("*.yaml")
+            if path.stem not in i18n.LANGUAGES or path.stem == i18n.SOURCE_LANGUAGE
         ]
 
-        self.assertFalse(missing, f"No UI catalogue for: {missing}")
+        self.assertFalse(stray, f"Catalogue for an unknown language: {stray}")
 
     def test_ui_catalogs_cover_exactly_the_interface_strings(self):
         expected = set(i18n.UI_STRINGS)
         mismatched = {}
 
-        for code in i18n.LANGUAGES:
-            if code == i18n.SOURCE_LANGUAGE:
-                continue
-            path = i18n.UI_DIR / f"{code}.yaml"
+        for path in sorted(i18n.UI_DIR.glob("*.yaml")):
+            code = path.stem
             entries = yaml.safe_load(path.read_text(encoding="utf-8"))
             if set(entries) != expected:
                 mismatched[code] = {

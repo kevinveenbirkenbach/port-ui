@@ -144,9 +144,17 @@ def translate(session, url, api_key, text, target):
     return translated
 
 
-def sync(url, api_key, sources, targets):
-    """Fill and write the content catalogue of every language in ``targets``."""
-    i18n.CONTENT_DIR.mkdir(parents=True, exist_ok=True)
+def sync(url, api_key, sources, targets, directory):
+    """Fill and write the catalogue of every language in ``targets``.
+
+    Args:
+        url: base URL of the LibreTranslate instance.
+        api_key: API key, or an empty string.
+        sources: English strings to translate.
+        targets: language codes to fill.
+        directory: catalogue directory to write into.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
     session = requests.Session()
 
     available = supported_languages(url, session)
@@ -155,12 +163,21 @@ def sync(url, api_key, sources, targets):
             print(f"- {target}: not offered by {url}, skipped")
             continue
 
-        path = i18n.CONTENT_DIR / f"{target}.yaml"
+        path = directory / f"{target}.yaml"
         catalog = load_existing(path)
         if catalog is None:
             continue
 
-        missing = sorted(source for source in sources if source not in catalog)
+        shipped = (
+            {}
+            if directory == i18n.UI_DIR
+            else i18n.read_catalog(i18n.UI_DIR / f"{target}.yaml")
+        )
+        missing = sorted(
+            source
+            for source in sources
+            if source not in catalog and source not in shipped
+        )
         if not missing:
             print(f"- {target}: complete")
             continue
@@ -202,6 +219,15 @@ def main(argv=None):
         help=f"Configuration to read the prose from (default: {DEFAULT_CONFIG_PATH}).",
     )
     parser.add_argument(
+        "--catalog",
+        choices=("content", "ui"),
+        default="content",
+        help=(
+            "content: your configuration's prose, generated per deployment. "
+            "ui: the interface strings that ship with the project."
+        ),
+    )
+    parser.add_argument(
         "--languages",
         nargs="+",
         default=[code for code in i18n.LANGUAGES if code != i18n.SOURCE_LANGUAGE],
@@ -209,12 +235,18 @@ def main(argv=None):
     )
     args = parser.parse_args(argv)
 
-    config = yaml.safe_load(args.config.read_text(encoding="utf-8"))
-    sources = collect_sources(config)
-    print(f"{len(sources)} translatable string(s) in {args.config}")
+    if args.catalog == "ui":
+        directory = i18n.UI_DIR
+        sources = set(i18n.UI_STRINGS)
+        print(f"{len(sources)} interface string(s)")
+    else:
+        directory = i18n.CONTENT_DIR
+        config = yaml.safe_load(args.config.read_text(encoding="utf-8"))
+        sources = collect_sources(config) | set(i18n.UI_STRINGS)
+        print(f"{len(sources)} string(s) in {args.config} and the interface")
 
     try:
-        sync(args.url.rstrip("/"), args.api_key, sources, args.languages)
+        sync(args.url.rstrip("/"), args.api_key, sources, args.languages, directory)
     except BackendError as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 1
