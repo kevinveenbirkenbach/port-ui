@@ -1,11 +1,48 @@
+function t(source) {
+  return (window.I18N || {})[source] || source;
+}
+
+const SAFE_URL_SCHEMES = ['http:', 'https:', 'mailto:'];
+
+function isSafeUrl(url) {
+  const probe = document.createElement('a');
+  probe.href = String(url == null ? '' : url);
+  return SAFE_URL_SCHEMES.includes(probe.protocol);
+}
+
+function iconAndName(item) {
+  const nodes = [];
+  if (item.icon && item.icon.class) {
+    const icon = document.createElement('i');
+    icon.className = item.icon.class;
+    nodes.push(icon, document.createTextNode(' '));
+  }
+  nodes.push(document.createTextNode(item.name == null ? '' : item.name));
+  return nodes;
+}
+
+function renderMarkdown(content) {
+  const escaped = String(content).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const parsed = new DOMParser().parseFromString(marked.parse(escaped), 'text/html');
+
+  parsed.querySelectorAll('a[href]').forEach((anchor) => {
+    if (!SAFE_URL_SCHEMES.includes(anchor.protocol)) {
+      anchor.replaceWith(...anchor.childNodes);
+    }
+  });
+  parsed.querySelectorAll('img[src]').forEach((image) => {
+    if (!SAFE_URL_SCHEMES.includes(image.protocol)) {
+      image.replaceWith(image.alt || '');
+    }
+  });
+
+  return parsed.body.innerHTML;
+}
+
 function openDynamicPopup(subitem) {
   closeAllModals();
   const modalTitle = document.getElementById('dynamicModalLabel');
-  if (subitem.icon && subitem.icon.class) {
-    modalTitle.innerHTML = `<i class="${subitem.icon.class}"></i> ${subitem.name}`;
-  } else {
-    modalTitle.innerText = subitem.name;
-  }
+  modalTitle.replaceChildren(...iconAndName(subitem));
 
   const identifierBox = document.getElementById('dynamicIdentifierBox');
   const modalContent = document.getElementById('dynamicModalContent');
@@ -21,7 +58,7 @@ function openDynamicPopup(subitem) {
     const box = document.getElementById(boxId);
     if (content) {
       box.classList.remove('d-none');
-      document.getElementById(textId).innerHTML = marked.parse(content);
+      document.getElementById(textId).innerHTML = renderMarkdown(content);
     } else {
       box.classList.add('d-none');
     }
@@ -44,16 +81,19 @@ function openDynamicPopup(subitem) {
   if (subitem.url) {
     linkBox.classList.remove('d-none');
     linkHref.href = subitem.url;
-    linkHref.innerText = subitem.description || "Open Link";
+    if (!isSafeUrl(subitem.url)) {
+      linkHref.removeAttribute('href');
+    }
+    linkHref.innerText = subitem.description || t("Open Link");
+    linkHref.classList.remove('iframe');
+    linkHref.onclick = null;
     if (subitem.iframe) {
       linkHref.classList.add('iframe');
-      // Attach an event listener that prevents the default behavior and
-      // opens the URL in an iframe when clicked.
-      linkHref.addEventListener('click', function(event) {
+      linkHref.onclick = function(event) {
         event.preventDefault();
         openIframe(subitem.url);
-        closeAllModals()
-      });
+        closeAllModals();
+      };
     }
   } else {
     linkBox.classList.add('d-none');
@@ -69,13 +109,13 @@ function openDynamicPopup(subitem) {
       items.forEach(item => {
         const listItem = document.createElement('li');
         listItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
-        listItem.innerHTML = `
-          <span>
-            <i class="${item.icon.class}"></i> ${item.name}
-          </span>
-          <button class="btn btn-outline-secondary btn-sm">Open</button>
-        `;
-        listItem.querySelector('button').addEventListener('click', () => onClickHandler(item));
+        const label = document.createElement('span');
+        label.replaceChildren(...iconAndName(item));
+        const button = document.createElement('button');
+        button.className = 'btn btn-outline-secondary btn-sm';
+        button.textContent = t('Open');
+        listItem.replaceChildren(label, button);
+        button.addEventListener('click', () => onClickHandler(item));
         list.appendChild(listItem);
       });
     } else {
@@ -90,7 +130,7 @@ function openDynamicPopup(subitem) {
   copyButton.onclick = () => {
     modalContent.select();
     navigator.clipboard.writeText(modalContent.value).then(() => {
-      alert('Identifier copied to clipboard!');
+      alert(t('Identifier copied to clipboard!'));
     });
   };
 

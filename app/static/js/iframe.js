@@ -34,6 +34,10 @@ function syncIframeHeight() {
 
 // Function to open a URL in an iframe (jQuery version mit 1500 ms Fade)
 function openIframe(url) {
+    if (!isSafeUrl(url)) {
+        return;
+    }
+
     var $container    = scrollbarContainer    ? $(scrollbarContainer)    : null;
     var $customScroll = customScrollbar       ? $(customScrollbar)       : null;
     var $main         = $(mainElement);
