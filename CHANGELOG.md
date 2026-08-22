@@ -1,3 +1,16 @@
+# Changelog
+
+## [2.1.0] - 2026-08-22
+
+* Multilingual site: every ISO 639-1 language has its own URL, */* follows the visitor's browser language, and a switcher in the navbar lists all 184 in their own script
+* Right-to-left layouts: Arabic, Hebrew, Persian, Urdu and six more mirror the page automatically
+* Machine translation: *make i18n* fills your card and menu texts from a LibreTranslate instance, *make i18n-ui* the interface strings; hand-corrected entries are never overwritten
+* Brand protection: list your product names in *app/i18n/keep.txt* and they stay untranslated in every language
+* Search engines: each page declares a canonical URL and an *hreflang* alternate per language
+* Security: configuration and translations are HTML-escaped, script URLs are stripped from links, images and the iframe view — set *TRUSTED_HOSTS* in *.env* to pin your public hostname
+* Reliability: a slow NASA APOD lookup no longer takes the page down
+* Developer tooling: *make test-e2e* runs Cypress directly instead of through act, and YAML, JavaScript and shell now have linters in CI
+
 ## [2.0.0] - 2026-05-18
 
 * * Asset resolution: new probe-first resolver tries a HEAD request and embeds reachable image URLs directly via a new external_url field, falling back to the cache-download path only when the probe fails; broken /static/https://... URLs no longer appear when the source cannot be downloaded
