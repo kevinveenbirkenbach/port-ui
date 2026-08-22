@@ -72,6 +72,21 @@ describe('Untrusted content in the modal', () => {
       cy.window().should('not.have.property', '__xss');
     });
 
+    it('keeps a relative link', () => {
+      open({ warning: 'See [the notes](/#anchor)' });
+
+      cy.get('#dynamicModalWarningText')
+        .find('a')
+        .should('have.attr', 'href', '/#anchor');
+    });
+
+    it('keeps the text of a link it strips', () => {
+      open({ warning: '[read this](javascript:window.__xss=1)' });
+
+      cy.get('#dynamicModalWarningText').should('contain.text', 'read this');
+      cy.window().should('not.have.property', '__xss');
+    });
+
     it('keeps ordinary markdown', () => {
       open({ warning: 'See [Matrix](https://matrix.org/) and **mind** this' });
 
@@ -83,6 +98,40 @@ describe('Untrusted content in the modal', () => {
   });
 
   describe('values interpolated outside markdown', () => {
+    it('does not treat an interface string as markup', () => {
+      cy.window().then(win => {
+        win.I18N.Open = '<img src=x onerror="window.__xss = true">';
+      });
+      open({
+        alternatives: [
+          { name: 'Alt', identifier: 'A', icon: { class: 'fa-alt' } },
+        ],
+      });
+
+      cy.get('#dynamicAlternativesList').find('img').should('not.exist');
+      cy.get('#dynamicAlternativesList').should('contain.text', 'onerror');
+      cy.window().should('not.have.property', '__xss');
+    });
+
+    it('falls back to the English source when a string is missing', () => {
+      cy.window().then(win => {
+        delete win.I18N;
+      });
+      open({
+        alternatives: [
+          { name: 'Alt', identifier: 'A', icon: { class: 'fa-alt' } },
+        ],
+      });
+
+      cy.get('#dynamicAlternativesList button').should('have.text', 'Open');
+    });
+
+    it('renders no placeholder for a missing name', () => {
+      open({ name: undefined });
+
+      cy.get('#dynamicModalLabel').should('not.contain.text', 'undefined');
+    });
+
     it('does not treat the name or the icon class as markup', () => {
       open({
         name: '<img src=x onerror="window.__xss = true">',
@@ -123,6 +172,12 @@ describe('Untrusted content in the modal', () => {
       );
     });
 
+    it('keeps a URL that carries surrounding whitespace', () => {
+      open({ url: ' https://example.com ', description: 'Good' });
+
+      cy.get('#dynamicModalLinkHref').should('have.attr', 'href');
+    });
+
     it('keeps a mailto URL', () => {
       open({ url: 'mailto:kevin@veen.world', description: 'Write' });
 
@@ -155,6 +210,17 @@ describe('Untrusted content in the modal', () => {
       cy.get('#dynamicModalLinkHref').should($anchor => {
         expect($anchor[0].onclick, 'stale click handler').to.equal(null);
       });
+    });
+
+    it('opens the current popup URL, not an earlier one', () => {
+      open({ url: 'https://a.test/', description: 'A', iframe: true });
+      open({ url: 'https://b.test/', description: 'B', iframe: true });
+
+      cy.get('#dynamicModalLinkHref').click();
+
+      cy.get('#main')
+        .find('iframe', { timeout: 4000 })
+        .should('have.attr', 'src', 'https://b.test/');
     });
   });
 });

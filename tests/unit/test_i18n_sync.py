@@ -50,6 +50,11 @@ class TestCollectSources(unittest.TestCase):
     def test_blank_values_are_ignored(self):
         self.assertEqual(i18n_sync.collect_sources({"text": "   "}), set())
 
+    def test_a_list_of_prose_is_collected(self):
+        self.assertEqual(
+            i18n_sync.collect_sources({"text": ["one", "two"]}), {"one", "two"}
+        )
+
 
 class TestTranslate(unittest.TestCase):
     def _session(self, ok, payload=None, status=200, text=""):
@@ -79,7 +84,33 @@ class TestTranslate(unittest.TestCase):
         self.assertNotIn("api_key", session.post.call_args.kwargs["data"])
 
     def test_failed_response_returns_none(self):
-        session = self._session(False, status=403, text="denied")
+        session = self._session(
+            False, {"translatedText": "SHOULD NOT BE USED"}, status=403, text="denied"
+        )
+
+        self.assertIsNone(i18n_sync.translate(session, "http://lt", "", "Hi", "de"))
+
+    def test_the_request_asks_for_plain_text_from_the_source_language(self):
+        session = self._session(True, {"translatedText": "Hallo"})
+
+        i18n_sync.translate(session, "http://lt", "", "Hello", "de")
+
+        data = session.post.call_args.kwargs["data"]
+        self.assertEqual(data["format"], "text")
+        self.assertEqual(data["source"], i18n.SOURCE_LANGUAGE)
+        self.assertEqual(data["target"], "de")
+
+    def test_the_request_is_bounded_by_a_timeout(self):
+        session = self._session(True, {"translatedText": "Hallo"})
+
+        i18n_sync.translate(session, "http://lt", "", "Hello", "de")
+
+        timeout = session.post.call_args.kwargs["timeout"]
+        self.assertIsInstance(timeout, (int, float))
+        self.assertGreater(timeout, 0)
+
+    def test_an_empty_translation_is_refused(self):
+        session = self._session(True, {"translatedText": ""})
 
         self.assertIsNone(i18n_sync.translate(session, "http://lt", "", "Hi", "de"))
 
@@ -121,6 +152,15 @@ class TestSupportedLanguages(unittest.TestCase):
 
     def test_an_unreachable_instance_is_reported(self):
         session = Mock(get=Mock(side_effect=i18n_sync.requests.ConnectTimeout("slow")))
+
+        with self.assertRaises(i18n_sync.BackendError):
+            i18n_sync.supported_languages("http://lt", session)
+
+    def test_an_error_status_is_reported(self):
+        response = Mock()
+        response.raise_for_status.side_effect = i18n_sync.requests.HTTPError("503")
+        response.json.return_value = [{"code": "de"}]
+        session = Mock(get=Mock(return_value=response))
 
         with self.assertRaises(i18n_sync.BackendError):
             i18n_sync.supported_languages("http://lt", session)
@@ -186,11 +226,11 @@ class TestWriteCatalog(unittest.TestCase):
         self.path = self.directory / "de.yaml"
 
     def test_the_catalog_is_written_and_no_scratch_file_is_left(self):
-        i18n_sync.write_catalog(self.path, {"Hi": "Hallo"})
+        i18n_sync.write_catalog(self.path, {"Hi": "Hallo", "Umlaut": "Grüße"})
 
-        self.assertEqual(
-            yaml.safe_load(self.path.read_text(encoding="utf-8")), {"Hi": "Hallo"}
-        )
+        text = self.path.read_text(encoding="utf-8")
+        self.assertEqual(yaml.safe_load(text), {"Hi": "Hallo", "Umlaut": "Grüße"})
+        self.assertIn("Grüße", text)
         self.assertEqual([p.name for p in self.directory.iterdir()], ["de.yaml"])
 
     def test_a_write_that_dies_halfway_leaves_the_previous_catalog_intact(self):
@@ -259,6 +299,11 @@ class TestSync(unittest.TestCase):
         self.assertFalse(self.path.exists())
         session.post.assert_not_called()
 
+    def test_an_empty_translation_is_not_stored(self):
+        self._run(["Hello"], translated="")
+
+        self.assertFalse(self.path.exists())
+
     def test_a_run_that_translated_nothing_leaves_the_file_untouched(self):
         original = "# Reviewed by a native speaker, keep the order.\nZebra: Zebra\n"
         self.path.write_text(original, encoding="utf-8")
@@ -278,6 +323,25 @@ class TestSync(unittest.TestCase):
 
         self.assertEqual(session.post.call_count, 1)
         self.assertNotIn("Close", yaml.safe_load(self.path.read_text(encoding="utf-8")))
+
+    def test_a_language_that_cannot_be_written_does_not_stop_the_others(self):
+        listing = Mock(raise_for_status=Mock())
+        listing.json.return_value = [{"code": "de"}, {"code": "fr"}]
+        answer = Mock(ok=True)
+        answer.json.return_value = {"translatedText": "UEBERSETZT"}
+        session = Mock(get=Mock(return_value=listing), post=Mock(return_value=answer))
+        original = i18n_sync.write_catalog
+
+        def fails_for_german(path, catalog):
+            if path.name == "de.yaml":
+                raise OSError("read-only")
+            original(path, catalog)
+
+        with patch.object(i18n_sync, "write_catalog", fails_for_german):
+            with patch.object(i18n_sync.requests, "Session", return_value=session):
+                i18n_sync.sync("http://lt", "", {"Hello"}, ["de", "fr"], self.directory)
+
+        self.assertTrue((self.directory / "fr.yaml").is_file())
 
     def test_the_catalog_directory_is_created(self):
         nested = self.directory / "content"

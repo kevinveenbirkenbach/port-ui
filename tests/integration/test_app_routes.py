@@ -6,6 +6,9 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
+
+import requests
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -92,15 +95,75 @@ class TestNegotiation(AppRouteMixin, unittest.TestCase):
 
 class TestEscaping(AppRouteMixin, unittest.TestCase):
     def test_catalog_content_is_html_escaped(self):
-        i18n._catalogs["de"] = {"Imprint": "<script>alert(1)</script>"}
+        i18n._catalogs["de"] = {"Copy": "<script>alert('ui')</script>"}
 
         body = self.client.get("/de/").get_data(as_text=True)
 
-        self.assertNotIn("<script>alert(1)</script>", body)
-        self.assertIn("&lt;script&gt;alert(1)", body)
+        self.assertNotIn("<script>alert('ui')</script>", body)
+        self.assertIn("&lt;script&gt;alert(&#39;ui&#39;)", body)
+
+    def test_configuration_content_is_html_escaped(self):
+        i18n._catalogs["de"] = {"Imprint": "<script>alert('config')</script>"}
+
+        body = self.client.get("/de/").get_data(as_text=True)
+
+        self.assertNotIn("<script>alert('config')</script>", body)
+        self.assertIn("&lt;script&gt;alert(&#39;config&#39;)", body)
+
+
+class TestApodBackground(AppRouteMixin, unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.addCleanup(flask_app.config.__setitem__, "NASA_API_KEY", None)
+        flask_app.config["NASA_API_KEY"] = "key"
+
+    def test_no_request_is_made_without_a_key(self):
+        flask_app.config["NASA_API_KEY"] = None
+
+        with patch("app.app.requests.get") as get:
+            self.assertIsNone(app_module.apod_background())
+
+        get.assert_not_called()
+
+    def test_a_transport_failure_costs_the_background_not_the_page(self):
+        with patch(
+            "app.app.requests.get", side_effect=requests.ConnectionError("down")
+        ):
+            self.assertIsNone(app_module.apod_background())
+
+        self.assertEqual(self.client.get("/en/").status_code, 200)
+
+    def test_an_error_response_costs_the_background_not_the_page(self):
+        refusal = Mock(ok=False)
+        refusal.json.return_value = {"media_type": "image", "url": "https://i.test/x"}
+
+        with patch("app.app.requests.get", return_value=refusal):
+            self.assertIsNone(app_module.apod_background())
+
+    def test_a_video_of_the_day_is_not_used_as_a_background(self):
+        answer = Mock(ok=True)
+        answer.json.return_value = {"media_type": "video", "url": "https://v.test/x"}
+
+        with patch("app.app.requests.get", return_value=answer):
+            self.assertIsNone(app_module.apod_background())
+
+    def test_an_image_of_the_day_is_used(self):
+        answer = Mock(ok=True)
+        answer.json.return_value = {"media_type": "image", "url": "https://i.test/x"}
+
+        with patch("app.app.requests.get", return_value=answer):
+            self.assertEqual(app_module.apod_background(), "https://i.test/x")
 
 
 class TestExternalUrls(AppRouteMixin, unittest.TestCase):
+    def test_only_the_forwarded_scheme_is_trusted(self):
+        proxy = flask_app.wsgi_app
+
+        self.assertEqual(proxy.x_proto, 1)
+        self.assertEqual(
+            (proxy.x_for, proxy.x_host, proxy.x_port, proxy.x_prefix), (0, 0, 0, 0)
+        )
+
     def test_forwarded_scheme_reaches_the_canonical_and_alternates(self):
         body = self.client.get(
             "/en/",

@@ -5,6 +5,7 @@ checks: the deletion is invisible to every suite, and its effect only shows up
 in production or in a fresh checkout.
 """
 
+import json
 import re
 import tomllib
 import unittest
@@ -62,6 +63,84 @@ class TestRunTargets(unittest.TestCase):
         for name, body in self.recipes.items():
             with self.subTest(target=name):
                 self.assertNotIn("--env-file", body)
+
+
+class TestLintCoverage(unittest.TestCase):
+    def setUp(self):
+        self.makefile = (REPO_ROOT / "Makefile").read_text(encoding="utf-8")
+
+    def test_the_lint_target_runs_every_linter(self):
+        prerequisites = re.search(r"^lint: (.+)$", self.makefile, re.MULTILINE).group(1)
+
+        self.assertGreaterEqual(
+            set(prerequisites.split()),
+            {"lint-actions", "lint-python", "lint-yaml", "lint-js", "lint-shell"},
+        )
+
+    def test_every_linter_has_a_ci_job(self):
+        workflow = yaml.safe_load(
+            (REPO_ROOT / ".github" / "workflows" / "lint.yml").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        self.assertGreaterEqual(
+            set(workflow["jobs"]),
+            {"lint-actions", "lint-python", "lint-yaml", "lint-js", "lint-shell"},
+        )
+
+    def test_the_javascript_linter_is_declared(self):
+        package = json.loads(
+            (REPO_ROOT / "app" / "package.json").read_text(encoding="utf-8")
+        )
+
+        self.assertGreaterEqual(
+            set(package["devDependencies"]), {"eslint", "@eslint/js", "globals"}
+        )
+
+    def test_the_documented_environment_keys_exist(self):
+        example = (REPO_ROOT / "env.example").read_text(encoding="utf-8")
+
+        for key in ("PORT", "IMAGE_NAME", "TRUSTED_HOSTS", "LIBRETRANSLATE_URL"):
+            with self.subTest(key=key):
+                self.assertRegex(example, rf"(?m)^{key}=")
+
+
+class TestEndToEndRunner(unittest.TestCase):
+    def setUp(self):
+        self.script = (REPO_ROOT / "scripts" / "run-e2e.sh").read_text(encoding="utf-8")
+
+    def test_a_foreign_listener_stops_the_run(self):
+        self.assertIn("already serves port", self.script)
+
+    def test_cypress_is_pinned_to_the_origin_flask_binds(self):
+        self.assertIn("CYPRESS_baseUrl", self.script)
+        self.assertIn("127.0.0.1", self.script)
+
+    def test_the_electron_node_flag_is_dropped(self):
+        self.assertIn("env -u ELECTRON_RUN_AS_NODE", self.script)
+
+    def test_every_probe_bypasses_a_proxy_and_is_bounded(self):
+        probes = [line for line in self.script.splitlines() if "curl " in line]
+
+        self.assertTrue(probes)
+        for probe in probes:
+            with self.subTest(probe=probe.strip()):
+                self.assertIn("--noproxy", probe)
+                self.assertIn("--max-time", probe)
+
+
+class TestVendoredAssets(unittest.TestCase):
+    def test_the_right_to_left_stylesheet_is_vendored(self):
+        script = (REPO_ROOT / "app" / "scripts" / "copy-vendor.js").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertEqual(
+            script.count("bootstrap.rtl.min.css"),
+            2,
+            "the RTL stylesheet needs both a source and a destination path",
+        )
 
 
 class TestPackagedCatalogs(unittest.TestCase):

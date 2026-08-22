@@ -138,8 +138,8 @@ def translate(session, url, api_key, text, target):
         print(f"  ! {target}: answered 200 but not JSON")
         return None
 
-    if not isinstance(translated, str):
-        print(f"  ! {target}: translatedText was {type(translated).__name__}")
+    if not isinstance(translated, str) or not translated.strip():
+        print(f"  ! {target}: unusable translatedText ({translated!r})")
         return None
     return translated
 

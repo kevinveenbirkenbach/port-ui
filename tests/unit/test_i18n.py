@@ -13,6 +13,9 @@ class TestNegotiate(unittest.TestCase):
     def test_regional_tag_beats_a_lower_ranked_exact_match(self):
         self.assertEqual(i18n.negotiate([("de-DE", 1.0), ("en", 0.8)]), "de")
 
+    def test_an_uppercase_tag_is_accepted(self):
+        self.assertEqual(i18n.negotiate([("DE-DE", 1.0)]), "de")
+
     def test_underscore_separated_tag_is_accepted(self):
         self.assertEqual(i18n.negotiate([("pt_BR", 1.0)]), "pt")
 
@@ -70,6 +73,11 @@ class TestTranslateTree(unittest.TestCase):
         self.assertEqual(card["url"], "A card")
         self.assertEqual(card["icon"]["class"], "Pictures")
 
+    def test_strings_inside_a_list_are_translated(self):
+        translated = i18n.translate_tree({"text": ["A card", "Pictures"]}, "xx")
+
+        self.assertEqual(translated["text"], ["Eine Karte", "Bilder"])
+
     def test_unknown_strings_keep_their_source_value(self):
         translated = i18n.translate_tree({"description": "Untranslated"}, "xx")
 
@@ -125,10 +133,15 @@ class TestReadCatalog(unittest.TestCase):
 
     def test_non_string_entries_are_dropped(self):
         self.path.write_text(
-            "Close: 42\nOpen:\nCopy: yes\nImprint: Impressum\n", encoding="utf-8"
+            "Close: 42\nOpen:\nCopy: yes\n123: Zahl\nyes: Ja\nImprint: Impressum\n",
+            encoding="utf-8",
         )
 
         self.assertEqual(i18n.read_catalog(self.path), {"Imprint": "Impressum"})
+
+    def test_a_missing_catalog_is_silent(self):
+        with self.assertNoLogs(level="WARNING"):
+            i18n.read_catalog(self.directory / "absent.yaml")
 
 
 class TestCatalogMerge(unittest.TestCase):

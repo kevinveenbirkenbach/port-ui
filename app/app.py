@@ -70,7 +70,7 @@ app = Flask(__name__)
 
 app.jinja_options = {**app.jinja_options, "autoescape": True}
 
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=0, x_proto=1)
 
 
 def trusted_hosts(raw):
