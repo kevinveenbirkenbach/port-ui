@@ -1,0 +1,46 @@
+# Strings utils/i18n_sync.py stores as themselves instead of translating.
+# One per line; blank lines and lines starting with # are ignored.
+
+Baserow
+Big Blue Button
+Bluesky
+Buy me a Coffee
+Discourse
+Duolingo
+Eversports
+Facebook
+Friendica
+Garmin
+Gitea
+GitHub
+GitHub Sponsors
+Infinito.Nexus
+Instagram
+Keycloak
+LDAP
+LinkedIn
+Mailu
+Mastodon
+Matomo
+Matrix
+Nextcloud
+Open Project
+Patreon
+PayPal
+Peertube
+Pixelfed
+Signal
+Snipe IT
+Spotify
+Taiga
+Telegram
+Twitter
+WhatsApp
+XING
+YouTube
+Yourls
+Zoom
+freelancermap.de
+malt
+phpMyAdmin
+upwork.com

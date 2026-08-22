@@ -30,19 +30,26 @@ class TestCollectSources(unittest.TestCase):
         self.assertEqual(
             i18n_sync.collect_sources(config),
             {
+                "Agile Coach",
                 "I lead transformations.",
                 "Another card.",
+                "Apps",
                 "Application menu",
                 "A tagline",
             },
         )
 
-    def test_label_and_structural_keys_are_left_alone(self):
+    def test_labels_are_collected_too(self):
+        config = {"name": "Pictures", "title": "Agile Coach"}
+
+        self.assertEqual(i18n_sync.collect_sources(config), {"Pictures", "Agile Coach"})
+
+    def test_structural_keys_are_left_alone(self):
         config = {
-            "name": "Mastodon",
-            "title": "Cybermaster",
             "url": "https://example.test",
             "link_text": "www.example.test",
+            "identifier": "@someone@example.test",
+            "icon": {"class": "fa-solid fa-users"},
         }
 
         self.assertEqual(i18n_sync.collect_sources(config), set())
@@ -178,6 +185,80 @@ class TestSupportedLanguages(unittest.TestCase):
                     i18n_sync.supported_languages("http://lt", self._session(payload))
 
 
+class TestReadKeep(unittest.TestCase):
+    def setUp(self):
+        self.directory = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.directory, True)
+        self.path = self.directory / "keep.txt"
+
+    def test_a_missing_file_keeps_nothing(self):
+        self.assertEqual(i18n_sync.read_keep(self.path), [])
+
+    def test_comments_and_blank_lines_are_ignored(self):
+        self.path.write_text(
+            "# brands\n\nMastodon\n  Bluesky  \n\n# more\nNextcloud\n",
+            encoding="utf-8",
+        )
+
+        self.assertEqual(
+            i18n_sync.read_keep(self.path), ["Mastodon", "Bluesky", "Nextcloud"]
+        )
+
+    def test_the_shipped_list_names_the_brands_of_the_sample_configuration(self):
+        shipped = i18n_sync.read_keep(i18n_sync.DEFAULT_KEEP_PATH)
+
+        self.assertGreaterEqual(set(shipped), {"Mastodon", "Nextcloud", "Matrix"})
+        self.assertNotIn("Pictures", shipped)
+        self.assertNotIn("Imprint", shipped)
+
+
+class TestCommandLine(unittest.TestCase):
+    def setUp(self):
+        self.directory = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.directory, True)
+        self.keep_file = self.directory / "keep.txt"
+        self.config = self.directory / "config.yaml"
+        self.config.write_text("cards: []\n", encoding="utf-8")
+
+    def _main(self, *extra):
+        with patch.object(i18n_sync, "sync") as sync:
+            i18n_sync.main(
+                [
+                    "--url",
+                    "http://lt/",
+                    "--config",
+                    str(self.config),
+                    "--keep-file",
+                    str(self.keep_file),
+                    *extra,
+                ]
+            )
+        return sync.call_args
+
+    def test_the_keep_file_reaches_the_sync(self):
+        self.keep_file.write_text("# brands\nMastodon\nNextcloud\n", encoding="utf-8")
+
+        keep = self._main().args[5]
+
+        self.assertEqual(list(keep), ["Mastodon", "Nextcloud"])
+
+    def test_the_command_line_adds_to_the_keep_file(self):
+        self.keep_file.write_text("Mastodon\n", encoding="utf-8")
+
+        keep = self._main("--keep", "Taiga").args[5]
+
+        self.assertEqual(list(keep), ["Mastodon", "Taiga"])
+
+    def test_a_trailing_slash_is_stripped_from_the_url(self):
+        self.assertEqual(self._main().args[0], "http://lt")
+
+    def test_a_backend_failure_is_reported_as_an_exit_code(self):
+        with patch.object(i18n_sync, "sync", side_effect=i18n_sync.BackendError("no")):
+            self.assertEqual(
+                i18n_sync.main(["--url", "http://lt", "--config", str(self.config)]), 1
+            )
+
+
 class TestLoadExisting(unittest.TestCase):
     def setUp(self):
         self.directory = Path(tempfile.mkdtemp())
@@ -256,7 +337,7 @@ class TestSync(unittest.TestCase):
         i18n.CONTENT_DIR = self.directory
         self.path = self.directory / "de.yaml"
 
-    def _run(self, sources, offered=("de",), translated="UEBERSETZT"):
+    def _run(self, sources, offered=("de",), translated="UEBERSETZT", keep=()):
         listing = Mock(raise_for_status=Mock())
         listing.json.return_value = [{"code": code} for code in offered]
         answer = Mock(ok=True)
@@ -264,7 +345,7 @@ class TestSync(unittest.TestCase):
         session = Mock(get=Mock(return_value=listing), post=Mock(return_value=answer))
 
         with patch.object(i18n_sync.requests, "Session", return_value=session):
-            i18n_sync.sync("http://lt", "", set(sources), ["de"], self.directory)
+            i18n_sync.sync("http://lt", "", set(sources), ["de"], self.directory, keep)
         return session
 
     def test_missing_entries_are_written(self):
@@ -298,6 +379,22 @@ class TestSync(unittest.TestCase):
 
         self.assertFalse(self.path.exists())
         session.post.assert_not_called()
+
+    def test_a_protected_string_is_stored_as_itself(self):
+        session = self._run(["Mastodon", "Hello"], keep=["Mastodon"])
+
+        catalog = yaml.safe_load(self.path.read_text(encoding="utf-8"))
+        self.assertEqual(catalog["Mastodon"], "Mastodon")
+        self.assertEqual(session.post.call_count, 1)
+
+    def test_a_protected_string_never_overwrites_an_existing_entry(self):
+        self.path.write_text("Mastodon: HAND-EDITED\n", encoding="utf-8")
+
+        self._run(["Mastodon", "Hello"], keep=["Mastodon"])
+
+        catalog = yaml.safe_load(self.path.read_text(encoding="utf-8"))
+        self.assertEqual(catalog["Mastodon"], "HAND-EDITED")
+        self.assertEqual(catalog["Hello"], "UEBERSETZT")
 
     def test_an_empty_translation_is_not_stored(self):
         self._run(["Hello"], translated="")

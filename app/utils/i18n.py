@@ -23,9 +23,9 @@ CONTENT_DIR = I18N_DIR / "content"
 SOURCE_LANGUAGE = "en"
 
 
-AUTOFILL_KEYS = frozenset({"description", "text", "warning", "info", "subtitel"})
-
-TRANSLATABLE_KEYS = AUTOFILL_KEYS | frozenset({"name", "title"})
+TRANSLATABLE_KEYS = frozenset(
+    {"description", "info", "name", "subtitel", "text", "title", "warning"}
+)
 
 UI_STRINGS = (
     "Alternatives",

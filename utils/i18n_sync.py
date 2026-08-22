@@ -20,6 +20,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from app.utils import i18n  # noqa: E402
 
 DEFAULT_CONFIG_PATH = REPO_ROOT / "app" / "config.yaml"
+DEFAULT_KEEP_PATH = i18n.I18N_DIR / "keep.txt"
 REQUEST_TIMEOUT = 30
 
 
@@ -38,9 +39,25 @@ def collect_sources(node, key=None, found=None):
     elif isinstance(node, list):
         for item in node:
             collect_sources(item, key, found)
-    elif isinstance(node, str) and key in i18n.AUTOFILL_KEYS and node.strip():
+    elif isinstance(node, str) and key in i18n.TRANSLATABLE_KEYS and node.strip():
         found.add(node)
     return found
+
+
+def read_keep(path):
+    """Return the strings listed in ``path``, ignoring blanks and comments.
+
+    Args:
+        path: a text file with one string per line, or a path that does not exist.
+    """
+    if not path.is_file():
+        return []
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return [
+        stripped
+        for stripped in (line.strip() for line in lines)
+        if stripped and not stripped.startswith("#")
+    ]
 
 
 class BackendError(Exception):
@@ -144,7 +161,7 @@ def translate(session, url, api_key, text, target):
     return translated
 
 
-def sync(url, api_key, sources, targets, directory):
+def sync(url, api_key, sources, targets, directory, keep=()):
     """Fill and write the catalogue of every language in ``targets``.
 
     Args:
@@ -153,6 +170,7 @@ def sync(url, api_key, sources, targets, directory):
         sources: English strings to translate.
         targets: language codes to fill.
         directory: catalogue directory to write into.
+        keep: strings to store as themselves instead of translating.
     """
     directory.mkdir(parents=True, exist_ok=True)
     session = requests.Session()
@@ -167,6 +185,9 @@ def sync(url, api_key, sources, targets, directory):
         catalog = load_existing(path)
         if catalog is None:
             continue
+
+        protected = {word: word for word in keep if word not in catalog}
+        catalog.update(protected)
 
         shipped = (
             {}
@@ -190,7 +211,7 @@ def sync(url, api_key, sources, targets, directory):
                 catalog[source] = translated
                 added += 1
 
-        if not added:
+        if not added and not protected:
             print(f"  ! {target}: nothing translated, leaving the file untouched")
             continue
 
@@ -228,6 +249,24 @@ def main(argv=None):
         ),
     )
     parser.add_argument(
+        "--keep",
+        nargs="+",
+        default=[],
+        metavar="STRING",
+        help=(
+            "Store these as themselves instead of translating, "
+            "in addition to --keep-file."
+        ),
+    )
+    parser.add_argument(
+        "--keep-file",
+        type=Path,
+        default=DEFAULT_KEEP_PATH,
+        help=(
+            f"One string per line, stored untranslated (default: {DEFAULT_KEEP_PATH})."
+        ),
+    )
+    parser.add_argument(
         "--languages",
         nargs="+",
         default=[code for code in i18n.LANGUAGES if code != i18n.SOURCE_LANGUAGE],
@@ -245,8 +284,18 @@ def main(argv=None):
         sources = collect_sources(config) | set(i18n.UI_STRINGS)
         print(f"{len(sources)} string(s) in {args.config} and the interface")
 
+    keep = read_keep(args.keep_file) + args.keep
+    print(f"{len(keep)} string(s) kept untranslated")
+
     try:
-        sync(args.url.rstrip("/"), args.api_key, sources, args.languages, directory)
+        sync(
+            args.url.rstrip("/"),
+            args.api_key,
+            sources,
+            args.languages,
+            directory,
+            keep,
+        )
     except BackendError as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 1

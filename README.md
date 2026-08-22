@@ -171,10 +171,25 @@ make i18n
 This fills the interface strings of the languages that ship no catalogue as
 well. Existing entries are never overwritten, and a string the shipped
 catalogue already covers is never requested, so corrections you make by hand
-survive later runs. Only prose (`description`, `text`, `warning`, `info`, `subtitel`) is
-filled automatically; `name` and `title` are left to you, because a machine
-cannot tell the menu label "Pictures" from the brand "Mastodon". Write those
-into the content catalogue yourself when you want them translated.
+survive later runs.
+
+`name`, `title`, `description`, `text`, `warning`, `info` and `subtitel` are
+translated; `url`, `link_text`, `identifier` and icon classes never are.
+
+A machine cannot tell the menu label "Pictures" from the brand "Mastodon", so
+list the brands in `app/i18n/keep.txt`, one per line — they are then stored as
+themselves in every language and cost no request:
+
+```
+# Strings utils/i18n_sync.py stores as themselves instead of translating.
+Mastodon
+Nextcloud
+freelancermap.de
+```
+
+Add one-off entries with `--keep Foo Bar`, or point somewhere else with
+`--keep-file`. A protected string never replaces an entry you already wrote by
+hand.
 
 ---
 
