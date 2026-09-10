@@ -7,6 +7,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: dev
     container_name: portfolio
     ports:
       - "${PORT:?PORT must be set in .env (see env.example)}:${PORT:?PORT must be set in .env (see env.example)}"
