@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.1] - 2026-09-10
+
+* Accessibility: header icons are *aria-hidden*, links read by label alone
+* Test coverage: unit test requires *aria-hidden* on every header icon
+
 ## [2.1.0] - 2026-08-22
 
 * Multilingual site: every ISO 639-1 language has its own URL, */* follows the visitor's browser language, and a switcher in the navbar lists all 184 in their own script
