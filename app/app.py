@@ -28,7 +28,6 @@ logging.basicConfig(level=logging.DEBUG)
 FLASK_ENV = os.getenv("FLASK_ENV", "production")
 FLASK_HOST = os.getenv("FLASK_HOST", "127.0.0.1")
 FLASK_PORT = int(os.getenv("FLASK_PORT", os.getenv("PORT", 5000)))
-print(f"Starting app on {FLASK_HOST}:{FLASK_PORT}, FLASK_ENV={FLASK_ENV}")
 
 # Initialize the CacheManager
 cache_manager = CacheManager()
@@ -190,6 +189,7 @@ def localized_index(lang):
 
 
 if __name__ == "__main__":
+    print(f"Starting app on {FLASK_HOST}:{FLASK_PORT}, FLASK_ENV={FLASK_ENV}")
     app.run(
         debug=(FLASK_ENV == "development"),
         host=FLASK_HOST,
