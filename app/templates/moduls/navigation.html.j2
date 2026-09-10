@@ -1,5 +1,5 @@
 {% macro render_icon_and_name(item) %}
-    <i class="{{ item.icon.class if item.icon is defined and item.icon.class is defined else 'fa-solid fa-link' }}"></i>
+    <i class="{{ item.icon.class if item.icon is defined and item.icon.class is defined else 'fa-solid fa-link' }}" aria-hidden="true"></i>
     {% if item.name is defined %}
         {{ item.name }}
     {% else %}
@@ -101,7 +101,7 @@
             {% if menu_type == "header" %}
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle btn btn-light" id="navbarDropdownLanguage" role="button" data-bs-toggle="dropdown" data-bs-display="dynamic" aria-expanded="false" title="{{ t('Language') }}">
-                    <i class="fa-solid fa-language"></i> {{ languages[lang] }}
+                    <i class="fa-solid fa-language" aria-hidden="true"></i> {{ languages[lang] }}
                 </a>
                 <ul class="dropdown-menu language-menu">
                     {% for code, endonym in languages.items() %}

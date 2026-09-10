@@ -9,14 +9,46 @@ class AnchorCollector(HTMLParser):
     def __init__(self):
         super().__init__()
         self.anchors = []
+        self.icons = []
 
     def handle_starttag(self, tag, attrs):
         if tag == "a":
             self.anchors.append(dict(attrs))
+        if tag == "i":
+            self.icons.append(dict(attrs))
 
 
 class TestNavigationTemplate(unittest.TestCase):
     def test_top_level_dropdowns_have_bootstrap_toggle_attribute(self):
+        parser = self._render_header()
+        dropdown_toggles = [
+            anchor
+            for anchor in parser.anchors
+            if "nav-link" in anchor.get("class", "")
+            and "dropdown-toggle" in anchor.get("class", "")
+        ]
+
+        self.assertEqual(len(dropdown_toggles), 2)
+        for toggle in dropdown_toggles:
+            self.assertEqual(toggle.get("data-bs-toggle"), "dropdown")
+
+        language_links = [
+            anchor for anchor in parser.anchors if anchor.get("hreflang") == "de"
+        ]
+        self.assertEqual(len(language_links), 1)
+        self.assertEqual(language_links[0]["href"], "/de/")
+
+    def test_menu_icons_stay_out_of_the_accessible_name(self):
+        parser = self._render_header()
+
+        self.assertTrue(parser.icons)
+        self.assertEqual(
+            [icon for icon in parser.icons if icon.get("aria-hidden") != "true"],
+            [],
+            "a Font Awesome glyph without aria-hidden joins the link's accessible name",
+        )
+
+    def _render_header(self):
         template_dir = Path(__file__).resolve().parents[2] / "app" / "templates"
         environment = Environment(
             loader=FileSystemLoader(template_dir),
@@ -68,22 +100,7 @@ class TestNavigationTemplate(unittest.TestCase):
 
         parser = AnchorCollector()
         parser.feed(rendered)
-        dropdown_toggles = [
-            anchor
-            for anchor in parser.anchors
-            if "nav-link" in anchor.get("class", "")
-            and "dropdown-toggle" in anchor.get("class", "")
-        ]
-
-        self.assertEqual(len(dropdown_toggles), 2)
-        for toggle in dropdown_toggles:
-            self.assertEqual(toggle.get("data-bs-toggle"), "dropdown")
-
-        language_links = [
-            anchor for anchor in parser.anchors if anchor.get("hreflang") == "de"
-        ]
-        self.assertEqual(len(language_links), 1)
-        self.assertEqual(language_links[0]["href"], "/de/")
+        return parser
 
 
 if __name__ == "__main__":
