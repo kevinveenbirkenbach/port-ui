@@ -5,9 +5,12 @@ function t(source) {
 const SAFE_URL_SCHEMES = ['http:', 'https:', 'mailto:'];
 
 function isSafeUrl(url) {
-  const probe = document.createElement('a');
-  probe.href = String(url == null ? '' : url);
-  return SAFE_URL_SCHEMES.includes(probe.protocol);
+  try {
+    const parsed = new URL(String(url == null ? '' : url), window.location.href);
+    return SAFE_URL_SCHEMES.includes(parsed.protocol);
+  } catch (error) {
+    return false;
+  }
 }
 
 function iconAndName(item) {

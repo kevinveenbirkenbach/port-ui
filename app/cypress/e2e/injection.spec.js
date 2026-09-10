@@ -253,11 +253,33 @@ describe('Untrusted content reaching the iframe', () => {
     cy.window().should('not.have.property', '__xss');
   });
 
-  it('still opens an ordinary URL from the query string', () => {
+  it('still opens a configured iframe target from the query string', () => {
+    cy.visit('/');
+    cy.get('a.iframe-link').first().invoke('prop', 'href').then((href) => {
+      cy.visit(`/?iframe=${encodeURIComponent(href)}`);
+
+      cy.get('#main')
+        .find('iframe', { timeout: AFTER_THE_FADE })
+        .should('have.attr', 'src', href);
+    });
+  });
+
+  it('refuses a foreign origin supplied through the query string', () => {
     cy.visit('/?iframe=https://example.com/');
 
-    cy.get('#main')
-      .find('iframe', { timeout: AFTER_THE_FADE })
-      .should('have.attr', 'src', 'https://example.com/');
+    cy.wait(AFTER_THE_FADE);
+    cy.get('#main').find('iframe').should('not.exist');
+  });
+
+  it('does not open a foreign query-string origin in a new tab', () => {
+    cy.visit('/?iframe=https://example.com/', {
+      onBeforeLoad(win) {
+        cy.stub(win, 'open').as('open');
+        cy.stub(win, 'alert');
+      },
+    });
+
+    cy.window().then((win) => win.openIframeInNewTab());
+    cy.get('@open').should('not.have.been.called');
   });
 });

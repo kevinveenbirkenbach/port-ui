@@ -2,10 +2,19 @@
 let mainElement, originalContent, originalMainStyle, container, customScrollbar, scrollbarContainer;
 let currentIframeUrl = null;
 
+function isAllowedIframeUrl(url) {
+  if (!isSafeUrl(url)) {
+    return false;
+  }
+  const allowedOrigins = new Set([window.location.origin]);
+  document.querySelectorAll('a.iframe-link[href]').forEach((link) => allowedOrigins.add(link.origin));
+  return allowedOrigins.has(new URL(url, window.location.href).origin);
+}
+
 // === Auto-open iframe if URL parameter is present ===
 window.addEventListener('DOMContentLoaded', () => {
   const paramUrl = new URLSearchParams(window.location.search).get('iframe');
-  if (paramUrl) {
+  if (paramUrl && isAllowedIframeUrl(paramUrl)) {
     currentIframeUrl = paramUrl;
     enterFullscreen();
     openIframe(paramUrl);
@@ -140,7 +149,7 @@ document.addEventListener("DOMContentLoaded", function() {
 function openIframeInNewTab() {
   const params = new URLSearchParams(window.location.search);
   const iframeUrl = params.get('iframe');
-  if (iframeUrl) {
+  if (iframeUrl && isAllowedIframeUrl(iframeUrl)) {
     window.open(iframeUrl, '_blank');
   } else {
     alert('No iframe is currently open.');
