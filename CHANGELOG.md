@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.2] - 2026-09-10
+
+* CI: lint tests install the project first, so the image publishes again
+* Tooling: make test runs every local suite in .venv and keeps going
+* Image: multi-stage build ships only runtime assets, no node or dev packages
+* Security: CodeQL findings fixed; iframe links only open configured origins
+* i18n: interface strings translated for all 184 languages, test-enforced
+
 ## [2.1.1] - 2026-09-10
 
 * Accessibility: header icons are *aria-hidden*, links read by label alone
