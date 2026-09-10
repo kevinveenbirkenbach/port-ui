@@ -185,7 +185,7 @@ lint-shell:
 	docker run --rm -v "$$PWD:/mnt" -w /mnt koalaman/shellcheck:stable scripts/*.sh
 
 .PHONY: test-lint
-test-lint:
+test-lint: install
 	# Run lint guardrail tests.
 	$(PYTHON) -m unittest discover -s tests/lint -t .
 
