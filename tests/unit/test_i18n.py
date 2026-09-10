@@ -3,6 +3,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -51,7 +52,7 @@ class TestDirection(unittest.TestCase):
 class TestTranslateTree(unittest.TestCase):
     def setUp(self):
         self.addCleanup(i18n._catalogs.clear)
-        i18n._catalogs["xx"] = {"A card": "Eine Karte", "Pictures": "Bilder"}
+        i18n._catalogs["de"] = {"A card": "Eine Karte", "Pictures": "Bilder"}
 
     def test_only_translatable_keys_are_replaced(self):
         tree = {
@@ -65,7 +66,7 @@ class TestTranslateTree(unittest.TestCase):
             ]
         }
 
-        translated = i18n.translate_tree(tree, "xx")
+        translated = i18n.translate_tree(tree, "de")
 
         card = translated["cards"][0]
         self.assertEqual(card["title"], "Bilder")
@@ -74,26 +75,26 @@ class TestTranslateTree(unittest.TestCase):
         self.assertEqual(card["icon"]["class"], "Pictures")
 
     def test_strings_inside_a_list_are_translated(self):
-        translated = i18n.translate_tree({"text": ["A card", "Pictures"]}, "xx")
+        translated = i18n.translate_tree({"text": ["A card", "Pictures"]}, "de")
 
         self.assertEqual(translated["text"], ["Eine Karte", "Bilder"])
 
     def test_unknown_strings_keep_their_source_value(self):
-        translated = i18n.translate_tree({"description": "Untranslated"}, "xx")
+        translated = i18n.translate_tree({"description": "Untranslated"}, "de")
 
         self.assertEqual(translated["description"], "Untranslated")
 
     def test_source_tree_is_left_untouched(self):
         tree = {"name": "Pictures"}
 
-        i18n.translate_tree(tree, "xx")
+        i18n.translate_tree(tree, "de")
 
         self.assertEqual(tree["name"], "Pictures")
 
     def test_non_string_leaves_survive(self):
         tree = {"name": 1, "text": None, "info": True}
 
-        self.assertEqual(i18n.translate_tree(tree, "xx"), tree)
+        self.assertEqual(i18n.translate_tree(tree, "de"), tree)
 
 
 class TestReadCatalog(unittest.TestCase):
@@ -167,6 +168,12 @@ class TestCatalogMerge(unittest.TestCase):
         self.assertEqual(
             i18n.catalog("de"), {"Close": "Zumachen", "Imprint": "Impressum"}
         )
+
+    def test_an_unsupported_code_never_becomes_a_path(self):
+        with mock.patch.object(i18n, "read_catalog") as read:
+            self.assertEqual(i18n.catalog("../content/de"), {})
+
+        read.assert_not_called()
 
 
 class TestShippedCatalogs(unittest.TestCase):

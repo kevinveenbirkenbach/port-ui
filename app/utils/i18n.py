@@ -43,6 +43,8 @@ UI_STRINGS = (
 
 _catalogs: dict[str, dict[str, str]] = {}
 
+_SUPPORTED = {code: code for code in LANGUAGES}
+
 
 def direction(code):
     """Return the writing direction of ``code`` as an HTML ``dir`` value."""
@@ -82,13 +84,21 @@ def clear_catalogs():
 
 
 def catalog(code):
-    """Return the merged UI and content catalogue for ``code``."""
-    if code not in _catalogs:
-        _catalogs[code] = {
-            **read_catalog(UI_DIR / f"{code}.yaml"),
-            **read_catalog(CONTENT_DIR / f"{code}.yaml"),
+    """Return the merged UI and content catalogue for ``code``.
+
+    The file name comes from the supported-language table, never from the
+    request value itself, so an unsupported code gets an empty catalogue
+    instead of a path.
+    """
+    known = _SUPPORTED.get(code)
+    if known is None:
+        return {}
+    if known not in _catalogs:
+        _catalogs[known] = {
+            **read_catalog(UI_DIR / f"{known}.yaml"),
+            **read_catalog(CONTENT_DIR / f"{known}.yaml"),
         }
-    return _catalogs[code]
+    return _catalogs[known]
 
 
 def negotiate(accepted, default=SOURCE_LANGUAGE):
