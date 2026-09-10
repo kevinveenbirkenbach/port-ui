@@ -7,6 +7,8 @@ endif
 
 PYTHON ?= python3
 ACT ?= act
+TEST_VENV := $(CURDIR)/.venv
+TEST_PYTHON ?= $(TEST_VENV)/bin/python
 
 # Bootstrap the local .env from the checked-in env.example template.
 # Idempotent: leaves an existing .env untouched.
@@ -252,5 +254,8 @@ ci: lint security test-unit test-integration test-e2e
 	# Run the local CI suite.
 
 .PHONY: test
-test: ci
-	# Run the full validation suite.
+test:
+	# Run every local suite in a project virtualenv, since PEP 668 refuses pip on
+	# a system Python, and keep going so each failing suite reports.
+	@[ -x "$(TEST_PYTHON)" ] || python3 -m venv "$(TEST_VENV)"
+	$(MAKE) --keep-going ci PYTHON="$(TEST_PYTHON)"

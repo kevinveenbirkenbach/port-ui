@@ -5,6 +5,7 @@ app/static/cache/*
 .env
 app/cypress/screenshots/*
 .ruff_cache/
+.venv/
 app/node_modules/
 app/static/vendor/
 hadolint-results.sarif
