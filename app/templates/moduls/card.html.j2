@@ -9,7 +9,7 @@
             src="{{ asset_src(card.icon) }}"
             alt="{{ card.title }}"
             style="width:100px; height:auto;"
-            onerror="this.style.display='none'; this.nextElementSibling?.style.display='inline-block';">
+            onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
           {% if card.icon.class %}
             <i class="{{ card.icon.class }}" style="display:none;"></i>
           {% endif %}
