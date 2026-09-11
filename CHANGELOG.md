@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.1.3] - 2026-09-11
+
+* CSP: UI strings ship as a JSON data block, not a CSP-blocked inline script
+* Cards: broken icon images fall back to the icon font (*onerror* fixed)
+* Iframe: a cross-origin iframe no longer throws a *SecurityError* on load
+* Fullscreen: scroll recalculation stops when the header animation ends
+* Fullscreen: a resize that keeps the fullscreen state triggers no recalc
+* Test coverage: no executable inline scripts; recalc must stop (Cypress)
+
 ## [2.1.2] - 2026-09-10
 
 * CI: lint tests install the project first, so the image publishes again
