@@ -1,3 +1,6 @@
+const i18nBlock = document.getElementById('i18n');
+window.I18N = i18nBlock ? JSON.parse(i18nBlock.textContent) : {};
+
 function t(source) {
   return (window.I18N || {})[source] || source;
 }

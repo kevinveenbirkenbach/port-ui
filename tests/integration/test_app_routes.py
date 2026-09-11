@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -109,6 +110,37 @@ class TestEscaping(AppRouteMixin, unittest.TestCase):
 
         self.assertNotIn("<script>alert('config')</script>", body)
         self.assertIn("&lt;script&gt;alert(&#39;config&#39;)", body)
+
+
+class TestContentSecurityPolicy(AppRouteMixin, unittest.TestCase):
+    def test_page_ships_no_executable_inline_script(self):
+        body = self.client.get("/de/").get_data(as_text=True)
+
+        inline = [
+            tag
+            for tag in re.findall(r"<script\b[^>]*>", body)
+            if "src=" not in tag and 'type="application/json"' not in tag
+        ]
+
+        self.assertEqual(
+            inline,
+            [],
+            "a host CSP can only hash an inline script whose content it knows, "
+            "and this one changes with every language",
+        )
+
+    def test_interface_strings_ship_as_a_json_data_block(self):
+        i18n._catalogs["de"] = {"Open": "</script><script>alert(1)</script>"}
+
+        body = self.client.get("/de/").get_data(as_text=True)
+        block = re.search(
+            r'<script id="i18n" type="application/json">(.*?)</script>', body, re.S
+        )
+
+        self.assertIsNotNone(block)
+        self.assertEqual(
+            json.loads(block.group(1))["Open"], "</script><script>alert(1)</script>"
+        )
 
 
 class TestApodBackground(AppRouteMixin, unittest.TestCase):

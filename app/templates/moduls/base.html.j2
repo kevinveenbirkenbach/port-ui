@@ -71,7 +71,7 @@
         </div>
         <!-- Include modal -->
         {% include "moduls/modal.html.j2" %}
-        <script>window.I18N = {{ ui_strings | tojson }};</script>
+        <script id="i18n" type="application/json">{{ ui_strings | tojson }}</script>
         {% for name in [
             'modal',
             'navigation',
