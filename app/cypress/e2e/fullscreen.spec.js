@@ -71,6 +71,18 @@ describe('Fullscreen Toggle', () => {
     });
   });
 
+  it('stops recalculating once the header has nothing left to animate', () => {
+    cy.window().then(win => {
+      cy.spy(win, 'adjustScrollContainerHeight').as('recalc');
+      win.exitFullscreen();
+    });
+    cy.wait(500);
+    cy.get('@recalc').then(spy => {
+      const settled = spy.callCount;
+      cy.wait(500).then(() => expect(spy.callCount).to.eq(settled));
+    });
+  });
+
   it('toggleFullscreen() toggles into and out of fullscreen', () => {
     // Toggle into fullscreen
     cy.window().invoke('toggleFullscreen');

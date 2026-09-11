@@ -9,31 +9,16 @@ function updateUrlFullscreen(enabled) {
   window.history.replaceState({}, '', url);
 }
 
-/**
- * Starts a requestAnimationFrame loop that calls your recalc methods,
- * and stops automatically when the header’s max-height transition ends.
- */
 function recalcWhileCollapsing() {
   const header = document.querySelector('header');
   if (!header) return;
 
-  // 1) Start the RAF loop
-  let rafId;
   const step = () => {
     adjustScrollContainerHeight();
     updateCustomScrollbar();
-    rafId = requestAnimationFrame(step);
+    if (header.getAnimations().length > 0) requestAnimationFrame(step);
   };
   step();
-
-  // 2) Listen for the end of the max-height transition
-  function onEnd(e) {
-    if (e.propertyName === 'max-height') {
-      cancelAnimationFrame(rafId);
-      header.removeEventListener('transitionend', onEnd);
-    }
-  }
-  header.addEventListener('transitionend', onEnd);
 }
 
 function enterFullscreen() {
@@ -100,6 +85,7 @@ document.addEventListener('fullscreenchange', function() {
 });
 window.addEventListener('resize', function() {
   var isUiFs = Math.abs(window.innerHeight - screen.height) < 2;
+  if (isUiFs === document.body.classList.contains('fullscreen')) return;
   if (isUiFs) enterFullscreen();
   else         exitFullscreen();
 });
