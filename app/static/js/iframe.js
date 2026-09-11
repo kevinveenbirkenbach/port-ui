@@ -168,7 +168,12 @@ function observeIframeNavigation() {
   const iframe = mainElement.querySelector("iframe");
   if (!iframe || !iframe.contentWindow) return;
 
-  let lastUrl = iframe.contentWindow.location.href;
+  let lastUrl;
+  try {
+    lastUrl = iframe.contentWindow.location.href;
+  } catch (e) {
+    return;
+  }
 
   setInterval(() => {
     try {
