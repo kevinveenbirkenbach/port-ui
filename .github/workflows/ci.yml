@@ -31,8 +31,8 @@ jobs:
       contents: read
       security-events: write
 
-  publish:
-    name: Publish image
+  version:
+    name: Detect release version
     runs-on: ubuntu-latest
     needs:
       - security
@@ -41,7 +41,10 @@ jobs:
     if: github.event_name == 'push'
     permissions:
       contents: read
-      packages: write
+    outputs:
+      found: ${{ steps.semver.outputs.found }}
+      version: ${{ steps.semver.outputs.version }}
+      image: ${{ steps.image.outputs.name }}
 
     steps:
       - name: Checkout repository
@@ -64,16 +67,34 @@ jobs:
           fi
 
       - name: Compute image name
-        if: steps.semver.outputs.found == 'true'
         id: image
         run: echo "name=ghcr.io/$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
+  publish:
+    name: Publish image (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - version
+    if: needs.version.outputs.found == 'true'
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
       - name: Set up Docker Buildx
-        if: steps.semver.outputs.found == 'true'
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - name: Login to GHCR
-        if: steps.semver.outputs.found == 'true'
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
@@ -81,10 +102,42 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and publish image
-        if: steps.semver.outputs.found == 'true'
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: ./Dockerfile
+          platforms: linux/${{ matrix.arch }}
           push: true
-          tags: ${{ steps.image.outputs.name }}:${{ steps.semver.outputs.version }}
+          tags: ${{ needs.version.outputs.image }}:${{ needs.version.outputs.version }}-${{ matrix.arch }}
+
+  manifest:
+    name: Join architectures
+    runs-on: ubuntu-latest
+    needs:
+      - version
+      - publish
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Login to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create the multi-arch manifest
+        env:
+          IMAGE: ${{ needs.version.outputs.image }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          docker buildx imagetools create -t "${IMAGE}:${VERSION}" \
+            "${IMAGE}:${VERSION}-amd64" \
+            "${IMAGE}:${VERSION}-arm64"
+          docker buildx imagetools inspect "${IMAGE}:${VERSION}"
