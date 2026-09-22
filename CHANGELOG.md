@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.2.0] - 2026-09-23
+
+* Images: releases ship arm64 next to amd64, for ARM servers and Apple Silicon
+* CI: each architecture builds on its own native runner, no QEMU emulation
+
 ## [2.1.3] - 2026-09-11
 
 * CSP: UI strings ship as a JSON data block, not a CSP-blocked inline script
