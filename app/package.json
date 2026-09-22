@@ -3,7 +3,7 @@
     "bootstrap": "5.3.8",
     "@fortawesome/fontawesome-free": "^7.3.1",
     "bootstrap-icons": "1.13.1",
-    "jquery": "3.6.0",
+    "jquery": "4.0.0",
     "marked": "^18.0.13"
   },
   "devDependencies": {
