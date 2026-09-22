@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.2.1] - 2026-09-23
+
+* Images: releases ship arm64 next to amd64, for ARM servers and Apple Silicon
+* CI: each architecture builds on its own native runner, no QEMU emulation
+* CI: one run per branch, so two pushes stop racing through the same jobs
+* CI: closing a pull request or deleting a branch cancels its pending runs
+* Dependencies: Dependabot watches actions, images, compose, pip and npm daily
+* Runtime: Python 3.14 and Node 25 base images
+* Frontend: Bootstrap 5.3.8, jQuery 4, Font Awesome 7, marked 18, Cypress 16
+
 ## [2.2.0] - 2026-09-23
 
 * Images: releases ship arm64 next to amd64, for ARM servers and Apple Silicon
