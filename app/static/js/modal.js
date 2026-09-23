@@ -8,8 +8,11 @@ function t(source) {
 const SAFE_URL_SCHEMES = ['http:', 'https:', 'mailto:'];
 
 function safeUrl(url) {
+  if (url == null || String(url) === '') {
+    return null;
+  }
   try {
-    const parsed = new URL(String(url == null ? '' : url), window.location.href);
+    const parsed = new URL(String(url), window.location.href);
     return SAFE_URL_SCHEMES.includes(parsed.protocol) ? parsed.href : null;
   } catch (error) {
     return null;

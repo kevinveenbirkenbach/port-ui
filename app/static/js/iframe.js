@@ -14,8 +14,8 @@ function allowedIframeUrl(url) {
 
 // === Auto-open iframe if URL parameter is present ===
 window.addEventListener('DOMContentLoaded', () => {
-  const paramUrl = allowedIframeUrl(new URLSearchParams(window.location.search).get('iframe'));
-  if (paramUrl) {
+  const paramUrl = new URLSearchParams(window.location.search).get('iframe');
+  if (paramUrl && allowedIframeUrl(paramUrl)) {
     currentIframeUrl = paramUrl;
     enterFullscreen();
     openIframe(paramUrl);
@@ -83,8 +83,8 @@ function openIframe(url) {
 
         // URL-State pushen
         var newUrl = new URL(window.location);
-        newUrl.searchParams.set('iframe', target);
-        window.history.pushState({ iframe: target }, '', newUrl);
+        newUrl.searchParams.set('iframe', url);
+        window.history.pushState({ iframe: url }, '', newUrl);
     });
 }
 
