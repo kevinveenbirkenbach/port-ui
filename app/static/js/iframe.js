@@ -2,19 +2,20 @@
 let mainElement, originalContent, originalMainStyle, container, customScrollbar, scrollbarContainer;
 let currentIframeUrl = null;
 
-function isAllowedIframeUrl(url) {
-  if (!isSafeUrl(url)) {
-    return false;
+function allowedIframeUrl(url) {
+  const candidate = safeUrl(url);
+  if (candidate === null) {
+    return null;
   }
   const allowedOrigins = new Set([window.location.origin]);
   document.querySelectorAll('a.iframe-link[href]').forEach((link) => allowedOrigins.add(link.origin));
-  return allowedOrigins.has(new URL(url, window.location.href).origin);
+  return allowedOrigins.has(new URL(candidate).origin) ? candidate : null;
 }
 
 // === Auto-open iframe if URL parameter is present ===
 window.addEventListener('DOMContentLoaded', () => {
-  const paramUrl = new URLSearchParams(window.location.search).get('iframe');
-  if (paramUrl && isAllowedIframeUrl(paramUrl)) {
+  const paramUrl = allowedIframeUrl(new URLSearchParams(window.location.search).get('iframe'));
+  if (paramUrl) {
     currentIframeUrl = paramUrl;
     enterFullscreen();
     openIframe(paramUrl);
@@ -43,7 +44,8 @@ function syncIframeHeight() {
 
 // Function to open a URL in an iframe (jQuery version mit 1500 ms Fade)
 function openIframe(url) {
-    if (!isSafeUrl(url)) {
+    const target = safeUrl(url);
+    if (target === null) {
         return;
     }
 
@@ -73,7 +75,7 @@ function openIframe(url) {
 
         // Quelle setzen und mit 1500 ms einblenden
         $iframe
-            .attr('src', url)
+            .attr('src', target)
             .fadeIn(1500, function() {
                 syncIframeHeight();
                 observeIframeNavigation();
@@ -81,8 +83,8 @@ function openIframe(url) {
 
         // URL-State pushen
         var newUrl = new URL(window.location);
-        newUrl.searchParams.set('iframe', url);
-        window.history.pushState({ iframe: url }, '', newUrl);
+        newUrl.searchParams.set('iframe', target);
+        window.history.pushState({ iframe: target }, '', newUrl);
     });
 }
 
@@ -148,8 +150,8 @@ document.addEventListener("DOMContentLoaded", function() {
  */
 function openIframeInNewTab() {
   const params = new URLSearchParams(window.location.search);
-  const iframeUrl = params.get('iframe');
-  if (iframeUrl && isAllowedIframeUrl(iframeUrl)) {
+  const iframeUrl = allowedIframeUrl(params.get('iframe'));
+  if (iframeUrl) {
     window.open(iframeUrl, '_blank');
   } else {
     alert('No iframe is currently open.');

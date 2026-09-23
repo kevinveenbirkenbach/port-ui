@@ -7,13 +7,17 @@ function t(source) {
 
 const SAFE_URL_SCHEMES = ['http:', 'https:', 'mailto:'];
 
-function isSafeUrl(url) {
+function safeUrl(url) {
   try {
     const parsed = new URL(String(url == null ? '' : url), window.location.href);
-    return SAFE_URL_SCHEMES.includes(parsed.protocol);
+    return SAFE_URL_SCHEMES.includes(parsed.protocol) ? parsed.href : null;
   } catch (error) {
-    return false;
+    return null;
   }
+}
+
+function isSafeUrl(url) {
+  return safeUrl(url) !== null;
 }
 
 function iconAndName(item) {

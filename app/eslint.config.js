@@ -21,6 +21,7 @@ const SHARED = {
   openDynamicPopup: 'readonly',
   closeAllModals: 'readonly',
   isSafeUrl: 'readonly',
+  safeUrl: 'readonly',
   openIframe: 'readonly',
   enterFullscreen: 'readonly',
   exitFullscreen: 'readonly',
