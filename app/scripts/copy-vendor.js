@@ -63,6 +63,7 @@ const markedCandidates = [
   path.join(NM, 'marked', 'marked.min.js'),              // v4.x
   path.join(NM, 'marked', 'lib', 'marked.umd.min.js'),   // v5.x
   path.join(NM, 'marked', 'dist', 'marked.min.js'),      // v9+
+  path.join(NM, 'marked', 'lib', 'marked.umd.js'),       // v16+
 ];
 const markedSrc = markedCandidates.find(p => fs.existsSync(p));
 if (!markedSrc) throw new Error('marked: no browser UMD build found in node_modules');
