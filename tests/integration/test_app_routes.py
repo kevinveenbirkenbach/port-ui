@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from html.parser import HTMLParser
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -112,18 +113,29 @@ class TestEscaping(AppRouteMixin, unittest.TestCase):
         self.assertIn("&lt;script&gt;alert(&#39;config&#39;)", body)
 
 
+class InlineScriptCollector(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.inline = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag != "script":
+            return
+        attributes = dict(attrs)
+        if "src" in attributes or attributes.get("type") == "application/json":
+            return
+        self.inline.append(self.get_starttag_text())
+
+
 class TestContentSecurityPolicy(AppRouteMixin, unittest.TestCase):
     def test_page_ships_no_executable_inline_script(self):
         body = self.client.get("/de/").get_data(as_text=True)
 
-        inline = [
-            tag
-            for tag in re.findall(r"<script\b[^>]*>", body)
-            if "src=" not in tag and 'type="application/json"' not in tag
-        ]
+        collector = InlineScriptCollector()
+        collector.feed(body)
 
         self.assertEqual(
-            inline,
+            collector.inline,
             [],
             "a host CSP can only hash an inline script whose content it knows, "
             "and this one changes with every language",

@@ -2,8 +2,8 @@ import re
 import shutil
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
-from unittest import mock
 
 import yaml
 
@@ -170,7 +170,7 @@ class TestCatalogMerge(unittest.TestCase):
         )
 
     def test_an_unsupported_code_never_becomes_a_path(self):
-        with mock.patch.object(i18n, "read_catalog") as read:
+        with unittest.mock.patch.object(i18n, "read_catalog") as read:
             self.assertEqual(i18n.catalog("../content/de"), {})
 
         read.assert_not_called()
