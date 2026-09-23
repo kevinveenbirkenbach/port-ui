@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.2.2] - 2026-09-23
+
+* Vendor assets: marked 18 is found again, so the image build stops failing
+* Iframe: a page without an iframe parameter no longer frames itself
+* Security: the iframe and the new tab only open a URL the validator returned
+* Tests: the inline-script check parses the page instead of matching a regex
+* Tests: a regression spec guards the page that carries no iframe parameter
+* CI: the Node jobs run the version Cypress 16 supports
+
 ## [2.2.1] - 2026-09-23
 
 * Images: releases ship arm64 next to amd64, for ARM servers and Apple Silicon
