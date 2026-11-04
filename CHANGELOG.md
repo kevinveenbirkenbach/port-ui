@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.3.0] - 2026-11-04
+
+Added:
+
+* Dashboard: an optional *dashboard* section turns on the features below
+* Folders: nested folders with counts, a breadcrumb and Back and Forward
+* Folders: the open folder lives in *?folder=*, so links and reloads keep it
+* Search: a picker under the field finds apps by title, text, tags, folder
+* Search: keyboard use, one typo allowed, *?q=*, */* or *Ctrl+K* to focus
+* Favourites and Recently used rows; a tile or list view that is remembered
+* Cards: a New badge from each card's *added* date and *new_days*
+* Frame: header and footer boxes with side borders and adaptive corners
+* Theming: CSS properties for the frame border, its radius and the shadows
+* Chips: *window.portui.chips* lets a deployment put badges on tiles
+* Translations: the new interface strings in all 183 languages
+
+Changed:
+
+* Iframe: Back and Forward open, close or switch the frame to match the URL
+* Iframe: closing the frame keeps other URL parameters such as *?folder=*
+* Iframe: Ctrl, Cmd, Shift and middle clicks open the app as a normal link
+
 ## [2.2.2] - 2026-09-23
 
 * Vendor assets: marked 18 is found again, so the image build stops failing
