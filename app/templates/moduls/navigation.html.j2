@@ -52,6 +52,19 @@
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav{{menu_type}}" aria-controls="navbarNav{{menu_type}}" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
     </button>
+    {% if menu_type == "header" and dashboard %}
+    <div class="portui-search">
+        <div class="position-relative portui-search-field">
+            <i class="fa-solid fa-magnifying-glass portui-search-icon" aria-hidden="true"></i>
+            <input type="search" id="portui-search" class="form-control form-control-sm"
+                   placeholder="{{ t('Search applications') }}" aria-label="{{ t('Search applications') }}"
+                   role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="portui-picker"
+                   autocomplete="off" spellcheck="false">
+        </div>
+        <ul id="portui-picker" class="dropdown-menu portui-picker" role="listbox" aria-label="{{ t('Results') }}" hidden></ul>
+        <div id="portui-live" class="visually-hidden" aria-live="polite"></div>
+    </div>
+    {% endif %}
     <div class="collapse navbar-collapse" id="navbarNav{{menu_type}}">
         {% if menu_type == "header" %}
         <a class="navbar-brand align-items-center d-flex js-restore" id="navbar_logo" href="#">

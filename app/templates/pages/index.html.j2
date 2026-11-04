@@ -1,6 +1,9 @@
 {% extends "moduls/base.html.j2" %}
 
 {% block content %}
+{% if dashboard %}
+{% include "moduls/dashboard.html.j2" %}
+{% else %}
 <div class="row">
     {% for card in cards %}
         {% set index = loop.index0 %}
@@ -9,4 +12,5 @@
         {% include "moduls/card.html.j2" %}
     {% endfor %}
 </div>
+{% endif %}
 {% endblock %}

@@ -25,6 +25,9 @@
         <script src="{{ url_for('static', filename='vendor/marked/marked.min.js') }}"></script>
         <link rel="stylesheet" href="{{ url_for('static', filename='css/default.css') }}">
         <link rel="stylesheet" href="{{ url_for('static', filename='css/custom_scrollbar.css') }}">
+        {% if dashboard %}
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+        {% endif %}
         <!-- JQuery -->
         <script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}"></script>
     </head>
@@ -39,6 +42,7 @@
       {% endif %}
     >
         <div class="container">
+            <div class="portui-frame-top">
             <header class="header js-restore">
               <img
                 src="{{ asset_src(platform.logo) }}"
@@ -49,6 +53,7 @@
             </header>
             {% set menu_type = "header" %}
             {% include "moduls/navigation.html.j2"%}
+            </div>
             <main id="main">
             <div class="scroll-container">
                 {% block content %}{% endblock %}
@@ -58,6 +63,7 @@
             <div id="custom-scrollbar">
                 <div id="scroll-thumb"></div>
             </div>
+            <div class="portui-frame-bottom">
             {% set menu_type = "footer" %}
             {% include "moduls/navigation.html.j2" %}
             <footer class="footer">
@@ -68,10 +74,14 @@
                     <p><a href="{{company.imprint_url}}" class="iframe-link"><i class="fa-solid fa-scale-balanced"></i> {{ t('Imprint') }}</a></p>
                 </div>
             </footer>
+            </div>
         </div>
         <!-- Include modal -->
         {% include "moduls/modal.html.j2" %}
         <script id="i18n" type="application/json">{{ ui_strings | tojson }}</script>
+        {% if dashboard %}
+        <script id="portui-dashboard-data" type="application/json">{{ dashboard.client | tojson }}</script>
+        {% endif %}
         {% for name in [
             'modal',
             'navigation',
@@ -80,7 +90,7 @@
             'fullwidth',
             'fullscreen',
             'iframe',
-        ] %}
+        ] + (['frame', 'chips', 'search', 'dashboard'] if dashboard else []) %}
         <script src="{{ url_for('static', filename='js/' ~ name ~ '.js') }}"></script>
         {% endfor %}
     </body>

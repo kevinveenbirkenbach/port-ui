@@ -1,6 +1,14 @@
-<div class="card-column {{ lg_class }} {{ md_class }} col-12">
+<div class="card-column {{ lg_class }} {{ md_class }} col-12"{% if entry %} data-portui-card="{{ index }}"{% if entry.key %} data-portui-id="{{ entry.key }}"{% endif %}{% if (open_folder and open_folder not in entry.folders) or (not open_folder and entry.folders) %} hidden{% endif %}{% endif %}>
   <div class="card h-100 d-flex flex-column">
-    <div class="card-body d-flex flex-column">
+    <div class="card-body d-flex flex-column{% if entry %} portui-card-body{% endif %}">
+      {% if entry %}
+      <span class="badge text-bg-primary portui-new" hidden>{{ t('New') }}</span>
+      {% if entry.key %}
+      <button type="button" class="btn btn-sm portui-star" aria-pressed="false" aria-label="{{ t('Favourites') }}" title="{{ t('Favourites') }}" hidden>
+        <i class="fa-regular fa-star" aria-hidden="true"></i>
+      </button>
+      {% endif %}
+      {% endif %}
       <div class="card-img-top">
         {% if card.icon.cache and card.icon.cache.endswith('.svg') %}
           {{ include_svg(card.icon.cache) }}
@@ -26,8 +34,13 @@
           class="mt-auto btn btn-light stretched-link {% if card.iframe %}iframe-link{% endif %}">
           <i class="fa-solid fa-globe"></i> {{ card.link_text }}
         </a>
+      {% elif entry %}
+        <span class="portui-pending"><i class="fa-solid fa-hourglass"></i> {{ card.link_text }}</span>
       {% else %}
         <i class="fa-solid fa-hourglass"></i> {{ card.link_text }}
+      {% endif %}
+      {% if entry and entry.key %}
+      <div class="portui-chips" data-portui-chips="{{ entry.key }}"></div>
       {% endif %}
     </div>
   </div>

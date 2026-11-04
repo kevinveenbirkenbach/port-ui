@@ -1,0 +1,65 @@
+<div id="portui-dashboard" class="portui-dashboard">
+  <div class="portui-toolbar">
+    {% if dashboard.folder_view %}
+    <div class="btn-group btn-group-sm portui-history" role="group">
+      <button type="button" class="btn btn-light portui-back" aria-label="{{ t('Back') }}" title="{{ t('Back') }}" disabled>
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="btn btn-light portui-forward" aria-label="{{ t('Forward') }}" title="{{ t('Forward') }}" disabled>
+        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+      </button>
+    </div>
+    <nav class="portui-breadcrumb" aria-label="{{ t('Applications') }}">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="?" data-portui-folder-link=""><i class="fa-solid fa-house" aria-hidden="true"></i> {{ t('Applications') }}</a></li>
+        {% for path, name in crumbs %}
+        <li class="breadcrumb-item"><a href="?folder={{ path }}" data-portui-folder-link="{{ path }}">{{ name }}</a></li>
+        {% endfor %}
+      </ol>
+    </nav>
+    {% endif %}
+    <button type="button" class="btn btn-light btn-sm portui-density" aria-pressed="false" aria-label="{{ t('List view') }}" title="{{ t('List view') }}">
+      <i class="fa-solid fa-list" aria-hidden="true"></i>
+    </button>
+  </div>
+  <section class="portui-section portui-favourites" hidden>
+    <h2 class="portui-section-title"><i class="fa-solid fa-star" aria-hidden="true"></i> {{ t('Favourites') }}</h2>
+    <div class="row portui-grid portui-row"></div>
+  </section>
+  <section class="portui-section portui-recent" hidden>
+    <h2 class="portui-section-title">
+      <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> {{ t('Recently used') }}
+      <button type="button" class="btn btn-link btn-sm portui-recent-clear" aria-label="{{ t('Clear') }}" title="{{ t('Clear') }}">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </h2>
+    <div class="row portui-grid portui-row"></div>
+  </section>
+  <p class="portui-empty" hidden>{{ t('No applications found') }}</p>
+  <div class="row portui-grid portui-main">
+    {% for folder in dashboard.folders %}
+    <div class="card-column col-12 col-md-6 col-lg-3 portui-folder" data-portui-folder="{{ folder.path }}"{% if folder.parent != open_folder %} hidden{% endif %}>
+      <div class="card h-100 d-flex flex-column">
+        <div class="card-body d-flex flex-column portui-card-body">
+          <div class="card-img-top">
+            {% if folder.icon %}<i class="{{ folder.icon }}" aria-hidden="true"></i>{% endif %}
+          </div>
+          <hr />
+          <h3 class="card-title">
+            <a href="?folder={{ folder.path }}" class="stretched-link portui-folder-link" data-portui-folder-link="{{ folder.path }}">{{ folder.name }}</a>
+          </h3>
+          {% if folder.description %}<p class="card-text">{{ folder.description }}</p>{% endif %}
+          <div class="portui-chips"><span class="badge rounded-pill text-bg-primary portui-count">{{ folder.count }}</span></div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    {% for card in cards %}
+      {% set index = loop.index0 %}
+      {% set entry = dashboard.cards[index] %}
+      {% set lg_class = 'col-lg-3' if dashboard.folder_view else lg_classes[index] %}
+      {% set md_class = 'col-md-6' if dashboard.folder_view else md_classes[index] %}
+      {% include "moduls/card.html.j2" %}
+    {% endfor %}
+  </div>
+</div>

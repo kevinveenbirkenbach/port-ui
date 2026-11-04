@@ -42,6 +42,26 @@ function syncIframeHeight() {
     }
 }
 
+let openToken = 0;
+let openPending = false;
+
+// A fresh element per target: changing src on a live iframe adds a joint session history entry, so Back would step the frame instead of the page.
+function frameFor(target, visible) {
+    return $('<iframe>', {
+        width: '100%',
+        frameborder: 0,
+        scrolling: 'auto',
+        src: target
+    }).css({ overflow: 'auto', display: visible ? '' : 'none' });
+}
+
+function cancelPendingOpen() {
+    openToken += 1;
+    openPending = false;
+    if (scrollbarContainer) $(scrollbarContainer).stop(true);
+    if (customScrollbar) $(customScrollbar).stop(true);
+}
+
 // Function to open a URL in an iframe (jQuery version mit 1500 ms Fade)
 function openIframe(url) {
     const target = safeUrl(url);
@@ -52,6 +72,8 @@ function openIframe(url) {
     var $container    = scrollbarContainer    ? $(scrollbarContainer)    : null;
     var $customScroll = customScrollbar       ? $(customScrollbar)       : null;
     var $main         = $(mainElement);
+    var token         = ++openToken;
+    openPending = true;
 
     // Original-Content ausblenden mit 1500 ms
     var promises = [];
@@ -59,23 +81,24 @@ function openIframe(url) {
     if ($customScroll) promises.push($customScroll.fadeOut(1500).promise());
 
     $.when.apply($, promises).done(function() {
+        if (token !== openToken) {
+            return;
+        }
+        openPending = false;
         // now that scroll areas are hidden, go fullscreen
         enterFullscreen();
-        // create iframe if it doesn’t exist yet
-        var $iframe = $main.find('iframe');
-        if ($iframe.length === 0) {
+        var $old = $main.find('iframe');
+        if ($old.length === 0) {
             originalMainStyle = $main.attr('style') || null;
-            $iframe = $('<iframe>', {
-                width: '100%',
-                frameborder: 0,
-                scrolling: 'auto'
-            }).css({ overflow: 'auto', display: 'none' });
+        }
+        var $iframe = frameFor(target, $old.length > 0);
+        if ($old.length) {
+            $old.replaceWith($iframe);
+        } else {
             $main.append($iframe);
         }
 
-        // Quelle setzen und mit 1500 ms einblenden
         $iframe
-            .attr('src', target)
             .fadeIn(1500, function() {
                 syncIframeHeight();
                 observeIframeNavigation();
@@ -83,8 +106,13 @@ function openIframe(url) {
 
         // URL-State pushen
         var newUrl = new URL(window.location);
+        var alreadyListed = newUrl.searchParams.get('iframe') === url;
         newUrl.searchParams.set('iframe', url);
-        window.history.pushState({ iframe: url }, '', newUrl);
+        if (alreadyListed) {
+            window.history.replaceState({ iframe: url }, '', newUrl);
+        } else {
+            window.history.pushState({ iframe: url }, '', newUrl);
+        }
     });
 }
 
@@ -92,11 +120,14 @@ function openIframe(url) {
  * Restore the original <main> content and exit fullscreen.
  */
 function restoreOriginal() {
+  cancelPendingOpen();
   // Exit fullscreen (collapse header/footer and run recalcs)
   exitFullscreen();
 
   // Replace <main> innerHTML with the snapshot we took on load
   mainElement.innerHTML = originalContent;
+  scrollbarContainer = container.querySelector(".scroll-container");
+  if (customScrollbar) customScrollbar.style.display = '';
 
   // Reset any inline styles on mainElement
   if (originalMainStyle !== null) {
@@ -111,7 +142,14 @@ function restoreOriginal() {
 
   // Clear iframe state and URL param
   currentIframeUrl = null;
-  history.replaceState(null, '', window.location.pathname);
+  dropIframeParam();
+  document.dispatchEvent(new CustomEvent('portui:restored'));
+}
+
+function dropIframeParam() {
+  const url = new URL(window.location);
+  url.searchParams.delete('iframe');
+  history.replaceState(history.state, '', url);
 }
 
 // Initialize event listeners after DOM content is loaded
@@ -139,7 +177,7 @@ document.addEventListener("DOMContentLoaded", function() {
         restoreOriginal();
         // clear stored URL and reset browser address
         currentIframeUrl = null;
-        history.replaceState(null, '', window.location.pathname);
+        dropIframeParam();
       });
     });
 
@@ -192,18 +230,43 @@ function observeIframeNavigation() {
   }, 500);
 }
 
-// Remember, open iframe, enter fullscreen, AND set the URL param immediately
-document.querySelectorAll(".iframe-link").forEach(link => {
-  link.addEventListener("click", function(event) {
-    event.preventDefault();
-    currentIframeUrl = this.href;
+// Capture phase and delegated: navigation.js stops propagation inside dropdowns, restoreOriginal() rebuilds <main>, and the dashboard clones tiles after load.
+document.addEventListener("click", function(event) {
+  const link = event.target.closest(".iframe-link");
+  if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) {
+    return;
+  }
+  event.preventDefault();
+  currentIframeUrl = link.href;
 
+  const newUrl = new URL(window.location);
+  newUrl.searchParams.set('iframe', currentIframeUrl);
+  window.history.pushState({ iframe: currentIframeUrl }, '', newUrl);
+
+  enterFullscreen();
+  openIframe(currentIframeUrl);
+}, true);
+
+window.addEventListener('popstate', function() {
+  const wanted = allowedIframeUrl(new URLSearchParams(window.location.search).get('iframe'));
+  const frame = mainElement.querySelector('iframe');
+  if (wanted === null) {
+    if (frame || openPending) {
+      restoreOriginal();
+    }
+    return;
+  }
+  currentIframeUrl = wanted;
+  if (frame) {
+    if (frame.getAttribute('src') !== wanted) {
+      const $fresh = frameFor(wanted, true);
+      $(frame).replaceWith($fresh);
+      syncIframeHeight();
+    }
+    return;
+  }
+  if (!openPending) {
     enterFullscreen();
-    openIframe(currentIframeUrl);
-
-    // Update the browser URL right away
-    const newUrl = new URL(window.location);
-    newUrl.searchParams.set('iframe', currentIframeUrl);
-    window.history.replaceState({ iframe: currentIframeUrl }, '', newUrl);
-  });
+    openIframe(new URLSearchParams(window.location.search).get('iframe'));
+  }
 });

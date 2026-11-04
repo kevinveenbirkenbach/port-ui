@@ -139,6 +139,91 @@ company:
 * **`children`** enables multi-level menus.
 * **`link`** references other YAML paths to avoid duplication.
 
+### 🗂️ Application dashboard (optional)
+
+Add a top-level `dashboard` section to turn the card grid into an application
+dashboard. Without it the page renders exactly as before.
+
+```yaml
+dashboard:
+  folders:                       # optional: folder view; omit for the flat grid
+    - slug: communication        # [a-z0-9-], used in ?folder=communication/chat
+      name: Communication        # translated through the content catalogue
+      description: Chat and mail # translated
+      icon: {class: fa-solid fa-comments}
+      children:
+        - slug: chat
+          name: Chat
+  new_days: 14                   # optional: "New" badge window for card.added
+cards:
+  - title: Matrix                # the existing card keys stay as they are
+    id: web-app-matrix           # stable id: favourites, recent list, chips
+    tags: [chat, element]        # searchable, never translated
+    folders: [communication/chat]  # one or more folder paths
+    added: "2026-11-01"          # optional: shows "New" for new_days
+```
+
+With the section present the page gains:
+
+* a search field in the header bar (`/` or `Ctrl+K`), live across all folders,
+  matching title, text, tags and folder names in the page language and in
+  English, tolerant of one typo in words of five or more letters; `↑`/`↓`,
+  `Enter` and `Esc` drive the picker, `?q=` holds a committed search;
+* with `folders`: folder tiles with application counts, a breadcrumb, back and
+  forward buttons and `?folder=<slug>/<slug>`; folders without applications
+  are hidden, cards without `folders` stay at the top level;
+* a star per card (`id` required) for a Favourites row, a Recently used row and
+  a tile/list toggle, all kept in `localStorage`;
+* a chip slot in the bottom corner of every card with an `id`, filled by the
+  host page through the chip API below.
+
+#### Chip API
+
+The dashboard scripts define `window.portui.chips` synchronously and then
+dispatch `portui:ready` on `document`. Chips are kept per card id and are
+redrawn into every place the card shows: its tile, the Favourites and Recently
+used rows, the list view and the search picker.
+
+```js
+document.addEventListener('portui:ready', () => {
+  window.portui.chips.set('web-app-matrix', [
+    { kind: 'lock', tone: 'primary', icon: 'fa-solid fa-lock',
+      label: 'Request access', href: 'https://access.example.org/?application=web-app-matrix',
+      newTab: true, state: 'request' },
+    { kind: 'health', tone: 'info', icon: 'fa-solid fa-circle-pause',
+      label: 'Paused', detail: ' · 13:05', state: 'paused' },
+  ]);
+});
+window.portui.chips.clear('web-app-matrix');
+```
+
+| Field | Required | Effect |
+| --- | --- | --- |
+| `kind` | yes | `[a-z0-9-]+`; the chip gets `portui-chip portui-chip-<kind>` |
+| `tone` | yes | `primary`, `success`, `info`, `warning`, `danger` or `secondary` (`text-bg-<tone>`) |
+| `label` | yes | tooltip and accessible name, translated through the interface catalogue when it holds the string |
+| `detail` | no | appended to the label untranslated |
+| `icon` | no | Font Awesome classes |
+| `href` | no | renders a link (unsafe schemes are dropped); without it a `<button type="button">` |
+| `newTab` | no | opens `href` in a new tab |
+| `state` | no | written to `data-portui-state` |
+
+`set(id, [])` and `clear(id)` remove the chips of a card. Invalid input throws a
+`TypeError`. Clicking a chip never opens the application, and port-ui neither
+stops nor prevents chip clicks, so the host page can listen for them on
+`document`. Without a caller no chips show. The catalogues translate
+`Sign in`, `Request access`, `No access`, `Running`, `Paused`, `Degraded`,
+`Down` and `Unknown`.
+
+#### Frame and shadows
+
+The header and footer are wrapped in `.portui-frame-top` and
+`.portui-frame-bottom`. Set `--portui-frame-border` for their side borders and
+`--portui-frame-radius` (default `12px`) for their inner corners, which square
+off where a card meets them. `--portui-shadow-frame`, `--portui-shadow-card`,
+`--portui-shadow-card-hover` and `--portui-shadow-popup` set the shadows of the
+frames, the cards at rest and on hover, and the menus and search picker.
+
 ---
 
 ## 🌍 Languages

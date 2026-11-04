@@ -8,7 +8,7 @@ from markupsafe import Markup
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 try:
-    from app.utils import i18n
+    from app.utils import dashboard, i18n
     from app.utils.asset_resolver import asset_src, resolve_asset_cache
     from app.utils.cache_manager import CacheManager
     from app.utils.compute_card_classes import compute_card_classes
@@ -19,9 +19,10 @@ except ImportError:  # pragma: no cover - supports running from the app/ directo
     from utils.compute_card_classes import compute_card_classes
     from utils.configuration_resolver import ConfigurationResolver
 
-    from utils import i18n
+    from utils import dashboard, i18n
 
 TRANSLATED_SECTIONS = ("cards", "company", "navigation", "platform")
+OPTIONAL_SECTIONS = ("dashboard",)
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -46,6 +47,9 @@ def load_config(app):
 
     resolver = ConfigurationResolver(config)
     resolver.resolve_links()
+    dashboard.validate(resolver.get_config())
+    for section in OPTIONAL_SECTIONS:
+        app.config.pop(section, None)
     app.config.update(resolver.get_config())
     app.config["TRANSLATED_CONFIG"] = {}
     i18n.clear_catalogs()
@@ -123,9 +127,16 @@ def translated_config(lang):
     """
     memo = app.config["TRANSLATED_CONFIG"]
     if lang not in memo:
-        source = {section: app.config[section] for section in TRANSLATED_SECTIONS}
-        memo[lang] = i18n.translate_tree(source, lang)
+        memo[lang] = i18n.translate_tree(source_config(), lang)
     return memo[lang]
+
+
+def source_config():
+    """Return the translatable configuration sections in their English source."""
+    present = [section for section in OPTIONAL_SECTIONS if section in app.config]
+    return {
+        section: app.config[section] for section in (*TRANSLATED_SECTIONS, *present)
+    }
 
 
 def apod_background():
@@ -156,6 +167,10 @@ def render_index(lang):
     config = translated_config(lang)
     cards = config["cards"]
     lg_classes, md_classes = compute_card_classes(cards)
+    model = dashboard.build(config, source_config())
+    open_folder, crumbs = (
+        dashboard.locate(model, request.args.get("folder")) if model else ("", [])
+    )
 
     return render_template(
         "pages/index.html.j2",
@@ -165,6 +180,9 @@ def render_index(lang):
         platform=config["platform"],
         lg_classes=lg_classes,
         md_classes=md_classes,
+        dashboard=model,
+        open_folder=open_folder,
+        crumbs=crumbs,
         apod_bg=apod_background(),
         lang=lang,
         lang_dir=i18n.direction(lang),

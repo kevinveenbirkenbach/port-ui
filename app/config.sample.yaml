@@ -197,9 +197,56 @@ accounts:
       class: fa fa-cloud
     url: https://s.veen.world/cloud
 
+dashboard:
+  folders:
+  - slug: coaching
+    name: Coaching
+    description: Guidance for people and organisations.
+    icon:
+      class: fa-solid fa-people-arrows
+    children:
+    - slug: business
+      name: Business
+      description: Agile transformation and conflict resolution.
+      icon:
+        class: fa-solid fa-briefcase
+    - slug: personal
+      name: Personal Growth
+      description: Coaching for personal development.
+      icon:
+        class: fa-solid fa-seedling
+  - slug: technology
+    name: Technology
+    description: Infrastructure, security and artificial intelligence.
+    icon:
+      class: fa-solid fa-microchip
+    children:
+    - slug: infrastructure
+      name: Infrastructure
+      description: Open-source IT for small and medium businesses.
+      icon:
+        class: fa-solid fa-server
+    - slug: ai
+      name: Artificial Intelligence
+      description: Prompts and AI-driven content.
+      icon:
+        class: fa-solid fa-robot
+  - slug: outdoors
+    name: Outdoors
+    description: Sailing and life on the water.
+    icon:
+      class: fa-solid fa-sailboat
+  - slug: archive
+    name: Archive
+    description: Retired services.
+    icon:
+      class: fa-solid fa-box-archive
+  new_days: 14
+
 cards:
 - icon:
     source: https://file.infinito.nexus/assets/img/logo.png
+    class: fa-solid fa-infinity
   title: Infinito.Nexus
   text: Open-source self-hosting stack — one-click deployable FOSS web apps with
     shared identity, asset, and observability services. The platform that hosts
@@ -207,8 +254,12 @@ cards:
   url: https://infinito.nexus
   link_text: infinito.nexus
   iframe: true
+  id: infinito-nexus
+  tags: [self-hosting, platform]
+  added: "2026-11-01"
 - icon:
     source: https://cloud.veen.world/s/logo_agile_coach_512x512/download
+    class: fa-solid fa-arrows-spin
   title: Agile Coach
   text: I lead agile transformations and improve team dynamics through Scrum, DevOps,
     and Agile Coaching. My goal is to enhance collaboration and efficiency in organizations,
@@ -216,40 +267,60 @@ cards:
   url: https://www.agile-coach.world
   link_text: www.agile-coach.world
   iframe: true
-- icon: 
+  id: agile-coach
+  tags: [scrum, devops]
+  folders: [coaching/business]
+- icon:
     source: https://cloud.veen.world/s/logo_personal_coach_512x512/download
+    class: fa-solid fa-user-graduate
   title: Personal Coach
   text: Offering personalized coaching for growth and development, I utilize a blend
     of hypnotherapy, mediation, and holistic techniques. My approach is tailored to
     help you achieve personal and professional milestones, fostering holistic well-being.
   url: https://www.personalcoach.berlin
   link_text: www.personalcoach.berlin
-- icon: 
+  id: personal-coach
+  tags: [growth]
+  folders: [coaching/personal]
+- icon:
     source: https://cloud.veen.world/s/logo_yachtmaster_512x512/download
+    class: fa-solid fa-anchor
   title: Yachtmaster
   text: As a Yachtmaster, I provide comprehensive sailing education, yacht delivery,
     and voyage planning services. Whether you're learning to sail or need an experienced
     skipper, my expertise ensures a safe and enjoyable experience on the water.
   url: https://www.yachtmaster.world
   link_text: www.yachtmaster.world
-- icon: 
+  id: yachtmaster
+  tags: [sailing, skipper]
+  folders: [outdoors]
+- icon:
     source: https://cloud.veen.world/s/logo_polymath_512x512/download
+    class: fa-solid fa-compass
   title: Polymath
   text: I support the evaluation and execution of complex cross-domain projects, offering
     insights across land, sea, sky, and digital realms. My expertise helps clients
     navigate and succeed in multifaceted environments with strategic precision.
   url: https://www.crossdomain.consulting/
   link_text: www.crossdomain.consulting
-- icon: 
+  id: polymath
+  tags: [consulting]
+  folders: [technology, coaching/business]
+- icon:
     source: https://cloud.veen.world/s/logo_cybermaster_512x512/download
+    class: fa-solid fa-shield-halved
   title: Cybermaster
   text: Specializing in open-source IT solutions for German SMBs, I focus on automation,
     security, and reliability. My services are designed to create robust infrastructures
     that streamline operations and safeguard digital assets.
   url: https://www.cybermaster.space
   link_text: www.cybermaster.space
-- icon: 
+  id: cybermaster
+  tags: [security, automation]
+  folders: [technology/infrastructure]
+- icon:
     source: https://cloud.veen.world/s/logo_prompt_master_512x512/download
+    class: fa-solid fa-wand-magic-sparkles
   title: Prompt Engineer
   text: Leveraging AI's power, I specialize in crafting custom prompts and creative
     content for AI-driven applications. My services are aimed at businesses, creatives,
@@ -257,8 +328,12 @@ cards:
     exploring new possibilities.
   url: https://promptmaster.nexus
   link_text: www.promptmaster.nexus
-- icon: 
+  id: prompt-engineer
+  tags: [prompts]
+  folders: [technology/ai]
+- icon:
     source: https://cloud.veen.world/s/logo_mediator_512x512/download
+    class: fa-solid fa-handshake
   title: Mediator
   text: Specializing in resolving interpersonal and business conflicts with empathy
     and neutrality, I facilitate open communication to achieve lasting agreements
@@ -266,8 +341,12 @@ cards:
     teams, and organizations to foster a harmonious and productive environment.
   url: https://www.mediator.veen.world
   link_text: www.mediator.veen.world
-- icon: 
+  id: mediator
+  tags: [conflict]
+  folders: [coaching/business, coaching/personal]
+- icon:
     source: https://cloud.veen.world/s/logo_hypnotherapist_512x512/download
+    class: fa-solid fa-brain
   title: Hypnotherapist
   text: As a certified Hypnotherapist, I offer tailored sessions to address mental
     and emotional challenges through hypnosis. My approach helps unlock the subconscious
@@ -275,6 +354,9 @@ cards:
     and embrace positive life changes.
   url: https://www.hypno.veen.world
   link_text: www.hypno.veen.world
+  id: hypnotherapist
+  tags: [hypnosis]
+  folders: [coaching/personal]
 #- icon: 
 #    source: https://cloud.veen.world/s/logo_skydiver_512x512/download
 #  title: Aerospace Consultant

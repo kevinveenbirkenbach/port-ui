@@ -29,6 +29,8 @@ const SHARED = {
   initFullWidthFromUrl: 'readonly',
   adjustScrollContainerHeight: 'readonly',
   updateCustomScrollbar: 'readonly',
+  t: 'readonly',
+  restoreOriginal: 'readonly',
 };
 
 module.exports = [
