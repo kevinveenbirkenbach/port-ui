@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "bootstrap": "5.3.8",
+    "bootstrap": "5.3.9",
     "@fortawesome/fontawesome-free": "^7.3.1",
     "bootstrap-icons": "1.13.1",
     "jquery": "4.0.0",
